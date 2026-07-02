@@ -1,19 +1,17 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
+import { attachUser } from './middleware/require-auth'
+import authRoutes from './routes/auth'
+import type { HonoEnv } from './types'
 
-type Bindings = {
-  giapha_db: D1Database
-  SESSIONS: KVNamespace
-  giapha_avatars: R2Bucket
-  JWT_SECRET: string
-}
-
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<HonoEnv>()
 
 app.use('*', logger())
-// No CORS middleware: API and frontend are served from the same Worker origin.
-// The Vite dev proxy (/api → :8787) makes CORS unnecessary even locally.
+app.use('*', attachUser)
+// No CORS middleware: API and frontend share the same Worker origin.
+// The Vite dev proxy (/api → :8787) makes CORS unnecessary locally too.
 
 app.get('/api/health', (c) => c.json({ ok: true }))
+app.route('/api/auth', authRoutes)
 
 export default app

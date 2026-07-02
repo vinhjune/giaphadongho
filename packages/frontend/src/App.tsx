@@ -1,18 +1,24 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
+import LoginPage from './pages/LoginPage'
 
-function App() {
+// Phase stubs — replaced as phases are implemented
+const Stub = ({ label }: { label: string }) => <div className="p-8 text-center text-stone-600">{label}</div>
+
+export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<div className="p-8 text-center">Gia Phả Dòng Họ — Phase 4</div>} />
-        <Route path="/login" element={<div className="p-8 text-center">Login — Phase 3</div>} />
-        <Route path="/tree" element={<div className="p-8 text-center">Tree View — Phase 5</div>} />
-        <Route path="/list" element={<div className="p-8 text-center">List View — Phase 5</div>} />
-        <Route path="/editor" element={<div className="p-8 text-center">Editor — Phase 6</div>} />
-        <Route path="/content" element={<div className="p-8 text-center">Content Editor — Phase 7</div>} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/"       element={<Stub label="Trang chủ — Phase 4" />} />
+          <Route path="/login"  element={<LoginPage />} />
+          <Route path="/tree"   element={<Stub label="Cây gia phả — Phase 5" />} />
+          <Route path="/list"   element={<Stub label="Danh sách — Phase 5" />} />
+          <Route path="/editor" element={<ProtectedRoute role="editor"><Stub label="Quản lý thành viên — Phase 6" /></ProtectedRoute>} />
+          <Route path="/content" element={<ProtectedRoute role="editor"><Stub label="Nội dung trang chủ — Phase 7" /></ProtectedRoute>} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }
-
-export default App
