@@ -5,6 +5,6 @@
     "lib": ["ESNext"],
     "noEmit": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "migrations"]
+  "include": ["src/**/*.ts", "../shared/src/lunar-types.d.ts"],
+  "exclude": ["node_modules", "dist", "migrations", "src/db/create-user.ts"]
 }
