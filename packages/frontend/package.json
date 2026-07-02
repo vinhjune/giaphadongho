@@ -12,6 +12,8 @@
     "@giapha/shared": "*",
     "@tanstack/react-query": "^5.0.0",
     "@xyflow/react": "^12.11.1",
+    "ag-grid-community": "^36.0.0",
+    "ag-grid-react": "^36.0.0",
     "dagre": "^0.8.5",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
