@@ -1,0 +1,32 @@
+{
+	// Run `wrangler d1 create giapha-db` and paste the database_id below.
+	// Run `wrangler kv namespace create SESSIONS` and paste the id below.
+	// Run `wrangler r2 bucket create giapha-avatars` (no ID needed — uses bucket_name).
+	// Run `wrangler secret put JWT_SECRET` to store the JWT secret securely.
+	"name": "giapha",
+	"main": "packages/api/src/index.ts",
+	"compatibility_date": "2025-01-01",
+	"assets": {
+		"directory": "packages/frontend/dist",
+		"not_found_handling": "single-page-application"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "giapha-db",
+			"database_id": "b9c92ebd-e993-4c82-95d2-66ed5cf306d2"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "SESSIONS",
+			"id": "80afbcfe694547fc9febe021a0d680ba"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "AVATARS",
+			"bucket_name": "giapha-avatars"
+		}
+	]
+}
