@@ -3,6 +3,7 @@ import { logger } from 'hono/logger'
 import { attachUser } from './middleware/require-auth'
 import authRoutes from './routes/auth'
 import publicRoutes from './routes/public'
+import personsRoutes from './routes/persons'
 import type { HonoEnv } from './types'
 
 const app = new Hono<HonoEnv>()
@@ -15,5 +16,6 @@ app.use('*', attachUser)
 app.get('/api/health', (c) => c.json({ ok: true }))
 app.route('/api/auth', authRoutes)
 app.route('/api/public', publicRoutes)
+app.route('/api/persons', personsRoutes)
 
 export default app
