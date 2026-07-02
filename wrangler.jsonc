@@ -14,7 +14,8 @@
 		{
 			"binding": "giapha_db",
 			"database_name": "giapha-db",
-			"database_id": "b9c92ebd-e993-4c82-95d2-66ed5cf306d2"
+			"database_id": "b9c92ebd-e993-4c82-95d2-66ed5cf306d2",
+			"migrations_dir": "packages/api/migrations"
 		}
 	],
 	"kv_namespaces": [

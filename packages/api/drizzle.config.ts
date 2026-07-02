@@ -1,8 +1,9 @@
 import { defineConfig } from 'drizzle-kit'
+import path from 'path'
 
 export default defineConfig({
-  schema: '../shared/src/schema.ts',
-  out: './migrations',
+  schema: path.resolve(__dirname, '../shared/src/schema.ts'),
+  out: path.resolve(__dirname, './migrations'),
   dialect: 'sqlite',
   driver: 'd1-http',
   dbCredentials: {

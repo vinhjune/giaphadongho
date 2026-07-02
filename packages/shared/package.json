@@ -9,7 +9,8 @@
     "./date-utils": "./src/date-utils.ts"
   },
   "dependencies": {
-    "drizzle-orm": "^0.38.0"
+    "drizzle-orm": "^0.38.0",
+    "lunar-javascript": "^1.7.7"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
