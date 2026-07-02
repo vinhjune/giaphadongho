@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
 import { users } from '@giapha/shared/schema'
 import { hashPassword, verifyPassword, signToken } from '../lib/auth'
 import { requireAuth } from '../middleware/require-auth'
@@ -8,13 +9,17 @@ import type { HonoEnv } from '../types'
 
 const SESSION_TTL = 7 * 24 * 60 * 60  // 7 days in seconds
 
+const loginSchema = z.object({
+  username: z.string().min(1).max(64),
+  password: z.string().min(1).max(128),
+})
+
 const auth = new Hono<HonoEnv>()
 
 auth.post('/login', async (c) => {
-  const body = await c.req.json<{ username?: string; password?: string }>()
-  if (!body.username || !body.password) {
-    return c.json({ error: 'Missing credentials' }, 400)
-  }
+  const parsed = loginSchema.safeParse(await c.req.json())
+  if (!parsed.success) return c.json({ error: 'Invalid input' }, 400)
+  const body = parsed.data
 
   const db = drizzle(c.env.giapha_db)
   const user = await db.select().from(users).where(eq(users.username, body.username)).get()

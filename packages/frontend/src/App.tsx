@@ -7,6 +7,7 @@ import TreePage from './pages/TreePage'
 import ListPage from './pages/ListPage'
 import EditorPage from './pages/EditorPage'
 import ContentEditorPage from './pages/ContentEditorPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/list"   element={<ListPage />} />
           <Route path="/editor" element={<ProtectedRoute role="editor"><EditorPage /></ProtectedRoute>} />
           <Route path="/content" element={<ProtectedRoute role="editor"><ContentEditorPage /></ProtectedRoute>} />
+          <Route path="*"       element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

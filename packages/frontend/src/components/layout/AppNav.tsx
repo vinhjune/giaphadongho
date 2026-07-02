@@ -20,7 +20,10 @@ export default function AppNav({ familyName }: { familyName?: string }) {
           <>
             <span className="text-stone-600">Xin chào, <strong>{user.username}</strong></span>
             {user.role === 'editor' && (
-              <Link to="/editor" className="text-amber-700 hover:underline">Quản lý</Link>
+              <>
+                <Link to="/editor"  className="text-amber-700 hover:underline">Thành viên</Link>
+                <Link to="/content" className="text-amber-700 hover:underline">Nội dung</Link>
+              </>
             )}
             <button onClick={handleLogout} className="text-stone-500 hover:text-stone-800 transition-colors">
               Đăng xuất

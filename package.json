@@ -8,6 +8,8 @@
     "db:generate": "drizzle-kit generate --config=packages/api/drizzle.config.ts",
     "db:migrate:local": "wrangler d1 migrations apply giapha-db --local",
     "db:migrate:prod": "wrangler d1 migrations apply giapha-db --remote",
+    "db:backup": "bash scripts/backup-d1.sh",
+    "db:backup:local": "bash scripts/backup-d1.sh --local",
     "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p packages/api/tsconfig.json && tsc --noEmit -p packages/frontend/tsconfig.json",
     "lint": "eslint packages/*/src --ext .ts,.tsx",
     "test": "vitest run"

@@ -4,8 +4,10 @@
   "private": true,
   "dependencies": {
     "@giapha/shared": "*",
+    "drizzle-orm": "^0.38.0",
     "hono": "^4.0.0",
-    "drizzle-orm": "^0.38.0"
+    "jose": "^6.2.3",
+    "zod": "^3.22.3"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",

@@ -11,8 +11,9 @@ packages/frontend/dist/
 .wrangler/
 .dev.vars
 
-# D1 backups (run scripts/export-d1-backup.sh — store locally, never commit)
+# D1 backups (run scripts/backup-d1.sh — store locally, never commit)
 backup-*.sql
+backups/
 
 # misc
 .DS_Store
