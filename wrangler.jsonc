@@ -12,7 +12,7 @@
 	},
 	"d1_databases": [
 		{
-			"binding": "DB",
+			"binding": "giapha_db",
 			"database_name": "giapha-db",
 			"database_id": "b9c92ebd-e993-4c82-95d2-66ed5cf306d2"
 		}
@@ -25,8 +25,8 @@
 	],
 	"r2_buckets": [
 		{
-			"binding": "AVATARS",
-			"bucket_name": "giapha-avatars"
+			"bucket_name": "giapha-avatars",
+			"binding": "giapha_avatars"
 		}
 	]
 }

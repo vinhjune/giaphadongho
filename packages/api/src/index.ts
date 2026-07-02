@@ -2,9 +2,9 @@ import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 
 type Bindings = {
-  DB: D1Database
+  giapha_db: D1Database
   SESSIONS: KVNamespace
-  AVATARS: R2Bucket
+  giapha_avatars: R2Bucket
   JWT_SECRET: string
 }
 
