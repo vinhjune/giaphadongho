@@ -25,9 +25,10 @@ async function hashPassword(pw: string): Promise<string> {
   return `${toHex(salt)}:${toHex(new Uint8Array(bits))}`
 }
 
-const hash = await hashPassword(password)
-const id = webcrypto.randomUUID()
-
-console.log('\nRun this SQL against your D1 database:\n')
-console.log(`INSERT INTO users (id, username, password_hash, role, is_active) VALUES ('${id}', '${username}', '${hash}', '${role}', 1);`)
-console.log()
+;(async () => {
+  const hash = await hashPassword(password)
+  const id = webcrypto.randomUUID()
+  console.log('\nRun this SQL against your D1 database:\n')
+  console.log(`INSERT INTO users (id, username, password_hash, role, is_active) VALUES ('${id}', '${username}', '${hash}', '${role}', 1);`)
+  console.log()
+})()
