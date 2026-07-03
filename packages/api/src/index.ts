@@ -8,6 +8,7 @@ import personsRoutes from './routes/persons'
 import editorRoutes from './routes/editor'
 import contentRoutes from './routes/content'
 import profileRoutes from './routes/profile'
+import { ensureDefaultAdmin } from './lib/init'
 import type { HonoEnv } from './types'
 
 const app = new Hono<HonoEnv>()
@@ -16,6 +17,8 @@ app.use('*', logger())
 app.use('*', securityHeaders)
 // Rate limit all API routes: 120 req / 60s per IP
 app.use('/api/*', rateLimit(120, 60))
+// Seed default admin on first request — no-op after initial deploy
+app.use('/api/*', async (c, next) => { await ensureDefaultAdmin(c.env); return next() })
 app.use('*', attachUser)
 // No CORS middleware: API and frontend share the same Worker origin.
 // The Vite dev proxy (/api → :8787) makes CORS unnecessary locally too.
