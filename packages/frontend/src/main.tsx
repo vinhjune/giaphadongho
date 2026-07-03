@@ -1,9 +1,12 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
+
+ModuleRegistry.registerModules([AllCommunityModule])
 
 const queryClient = new QueryClient({
   defaultOptions: {
