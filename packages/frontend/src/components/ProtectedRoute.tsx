@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import type { ReactNode } from 'react'
 
@@ -10,7 +10,8 @@ type Props = {
 
 export default function ProtectedRoute({ children, role }: Props) {
   const { user } = useAuth()
-  if (!user) return <Navigate to="/login" replace />
+  const location = useLocation()
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />
   if (role === 'editor' && user.role !== 'editor') return <Navigate to="/" replace />
   return <>{children}</>
 }

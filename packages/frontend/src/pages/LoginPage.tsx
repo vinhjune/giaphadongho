@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = (location.state as { from?: string } | null)?.from ?? '/'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState<string | null>(null)
@@ -30,7 +32,7 @@ export default function LoginPage() {
       const meRes = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${data.token}` } })
       const me = meRes.ok ? (await meRes.json()) as { personId: string | null } : { personId: null }
       login(data.token, { username: data.username, role: data.role, personId: me.personId })
-      navigate('/')
+      navigate(from, { replace: true })
     } catch {
       setError('Lỗi kết nối. Vui lòng thử lại.')
     } finally {
