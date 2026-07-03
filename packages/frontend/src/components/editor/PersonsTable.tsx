@@ -19,6 +19,21 @@ type RowState = PersonWithParents & {
 
 const GENDER_LABELS: Record<string, string> = { male: 'Nam', female: 'Nữ', other: 'Khác' }
 
+const LUNAR_MONTH_NAMES = ['Giêng','Hai','Ba','Tư','Năm','Sáu','Bảy','Tám','Chín','Mười','Mười Một','Chạp']
+
+function formatBirthDate(row: RowState | undefined): string {
+  if (!row) return '—'
+  const { birthDay, birthMonth, birthYear, birthIsLunar } = row
+  if (!birthYear && !birthMonth && !birthDay) return '—'
+  const parts: string[] = []
+  if (birthDay) parts.push(String(birthDay))
+  if (birthMonth) {
+    parts.push(birthIsLunar ? (LUNAR_MONTH_NAMES[birthMonth - 1] ?? String(birthMonth)) : String(birthMonth))
+  }
+  if (birthYear) parts.push(String(birthYear))
+  return parts.join('/') + (birthIsLunar ? ' (ÂL)' : '')
+}
+
 export default function PersonsTable() {
   const { token } = useAuth()
   const [rows, setRows]       = useState<RowState[]>([])
@@ -79,10 +94,11 @@ export default function PersonsTable() {
     },
     {
       field: 'birthYear',
-      headerName: 'Năm sinh',
-      width: 100,
+      headerName: 'Ngày sinh',
+      width: 150,
       editable: true,
       cellEditor: 'agNumberCellEditor',
+      valueFormatter: p => formatBirthDate(p.data),
     },
     {
       field: 'isAlive',
