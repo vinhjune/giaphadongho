@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppNav from '../components/layout/AppNav'
 import AvatarUpload from '../components/editor/AvatarUpload'
+import DatePartInputs from '../components/editor/date-part-inputs'
 import { useAuth } from '../contexts/AuthContext'
 import type { PersonFull } from '@giapha/shared/types'
 
@@ -88,9 +89,9 @@ function PersonInfoSection({
     address:      person.address ?? '',
     email:        person.email ?? '',
     phone:        person.phone ?? '',
-    birthYear:    person.birthYear?.toString() ?? '',
-    birthMonth:   person.birthMonth?.toString() ?? '',
-    birthDay:     person.birthDay?.toString() ?? '',
+    birthYear:    person.birthYear ?? null as number | null,
+    birthMonth:   person.birthMonth ?? null as number | null,
+    birthDay:     person.birthDay ?? null as number | null,
     birthIsLunar: person.birthIsLunar,
     isAlive:      person.isAlive,
     notes:        person.notes ?? '',
@@ -112,9 +113,9 @@ function PersonInfoSection({
         address:      form.address || null,
         email:        form.email || null,
         phone:        form.phone || null,
-        birthYear:    form.birthYear ? parseInt(form.birthYear) : null,
-        birthMonth:   form.birthMonth ? parseInt(form.birthMonth) : null,
-        birthDay:     form.birthDay ? parseInt(form.birthDay) : null,
+        birthYear:    form.birthYear,
+        birthMonth:   form.birthMonth,
+        birthDay:     form.birthDay,
         birthIsLunar: form.birthIsLunar,
         isAlive:      form.isAlive,
         notes:        form.notes || null,
@@ -191,9 +192,12 @@ function PersonInfoSection({
         {field('Email', 'email', 'email')}
         {field('Số điện thoại', 'phone', 'tel')}
         <div className="grid grid-cols-3 gap-3">
-          {field('Năm sinh', 'birthYear', 'number', 'YYYY')}
-          {field('Tháng sinh', 'birthMonth', 'number', 'M')}
-          {field('Ngày sinh', 'birthDay', 'number', 'D')}
+          <DatePartInputs
+            day={form.birthDay} month={form.birthMonth} year={form.birthYear}
+            onDay={v => setForm(f => ({ ...f, birthDay: v }))}
+            onMonth={v => setForm(f => ({ ...f, birthMonth: v }))}
+            onYear={v => setForm(f => ({ ...f, birthYear: v }))}
+          />
         </div>
         <label className="flex items-center gap-2 text-sm text-stone-700">
           <input type="checkbox" checked={form.birthIsLunar} onChange={e => setForm(f => ({ ...f, birthIsLunar: e.target.checked }))} />

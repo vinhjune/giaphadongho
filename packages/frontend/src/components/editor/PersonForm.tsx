@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import AvatarUpload from './AvatarUpload'
+import DatePartInputs from './date-part-inputs'
 import type { PersonFull } from '@giapha/shared/types'
 
 type Props = {
@@ -96,9 +97,10 @@ export default function PersonForm({ person, onSaved, onCancel }: Props) {
       </label>
 
       <div className="grid grid-cols-3 gap-2">
-        <Input label="Năm sinh" field="birthYear" type="number" />
-        <Input label="Tháng" field="birthMonth" type="number" />
-        <Input label="Ngày" field="birthDay" type="number" />
+        <DatePartInputs
+          day={form.birthDay ?? null} month={form.birthMonth ?? null} year={form.birthYear ?? null}
+          onDay={v => set('birthDay', v)} onMonth={v => set('birthMonth', v)} onYear={v => set('birthYear', v)}
+        />
       </div>
 
       <label className="flex items-center gap-2 text-sm">
@@ -108,9 +110,10 @@ export default function PersonForm({ person, onSaved, onCancel }: Props) {
 
       {!form.isAlive && (
         <div className="grid grid-cols-3 gap-2">
-          <Input label="Năm mất" field="deathYear" type="number" />
-          <Input label="Tháng" field="deathMonth" type="number" />
-          <Input label="Ngày" field="deathDay" type="number" />
+          <DatePartInputs
+            day={form.deathDay ?? null} month={form.deathMonth ?? null} year={form.deathYear ?? null}
+            onDay={v => set('deathDay', v)} onMonth={v => set('deathMonth', v)} onYear={v => set('deathYear', v)}
+          />
         </div>
       )}
 
