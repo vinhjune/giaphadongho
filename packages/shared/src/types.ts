@@ -26,6 +26,11 @@ export type PersonFull = PersonPublic & {
   deathIsLunar: boolean
 }
 
+export type PersonWithParents = PersonFull & {
+  fatherId: string | null
+  motherId: string | null
+}
+
 export type Family = {
   id: string
   parent1Id: string | null

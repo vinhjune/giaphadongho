@@ -1,16 +1,275 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, isNull, count } from 'drizzle-orm'
 import { z } from 'zod'
 import { persons, families, familyMembers, users } from '@giapha/shared/schema'
 import { hashPassword } from '../lib/auth'
 import { requireEditor } from '../middleware/require-auth'
 import type { HonoEnv } from '../types'
+import type { DrizzleD1Database } from 'drizzle-orm/d1'
+import type * as schema from '@giapha/shared/schema'
+
+type DB = DrizzleD1Database<typeof schema>
+
+// ─── Family sync helper ───────────────────────────────────────────────────────
+// Sets a person's parents by finding/creating the matching family and moving
+// the child. Deletes the old family if it becomes childless.
+async function syncParents(db: DB, personId: string, fatherId: string | null, motherId: string | null) {
+  // Find current family where this person is a child
+  const currentMembership = await db
+    .select({ familyId: familyMembers.familyId })
+    .from(familyMembers)
+    .where(eq(familyMembers.personId, personId))
+    .get()
+
+  if (currentMembership) {
+    const currentFamily = await db
+      .select({ id: families.id, parent1Id: families.parent1Id, parent2Id: families.parent2Id })
+      .from(families)
+      .where(eq(families.id, currentMembership.familyId))
+      .get()
+
+    if (currentFamily &&
+        (currentFamily.parent1Id ?? null) === fatherId &&
+        (currentFamily.parent2Id ?? null) === motherId) {
+      return // no change
+    }
+
+    // Remove from current family
+    await db.delete(familyMembers)
+      .where(and(eq(familyMembers.personId, personId), eq(familyMembers.familyId, currentMembership.familyId)))
+
+    // Delete current family if now childless
+    const [{ remaining }] = await db
+      .select({ remaining: count() })
+      .from(familyMembers)
+      .where(eq(familyMembers.familyId, currentMembership.familyId))
+    if (remaining === 0) {
+      await db.delete(families).where(eq(families.id, currentMembership.familyId))
+    }
+  }
+
+  if (!fatherId && !motherId) return // no target parents — done
+
+  // Find or create the target family for this (fatherId, motherId) pair
+  const p1Cond = fatherId ? eq(families.parent1Id, fatherId) : isNull(families.parent1Id)
+  const p2Cond = motherId ? eq(families.parent2Id, motherId) : isNull(families.parent2Id)
+  let targetFamily = await db.select({ id: families.id }).from(families).where(and(p1Cond, p2Cond)).get()
+
+  if (!targetFamily) {
+    const newFamilyId = crypto.randomUUID()
+    await db.insert(families).values({ id: newFamilyId, parent1Id: fatherId, parent2Id: motherId })
+    targetFamily = { id: newFamilyId }
+  }
+
+  await db.insert(familyMembers).values({ familyId: targetFamily.id, personId })
+}
 
 const editorRoutes = new Hono<HonoEnv>()
 editorRoutes.use('*', requireEditor)
 
 // ─── Persons CRUD ─────────────────────────────────────────────────────────────
+
+// GET /api/editor/persons/with-parents — persons list with derived fatherId/motherId
+// Must be registered before any :id routes to avoid param capture
+editorRoutes.get('/persons/with-parents', async (c) => {
+  const db = drizzle(c.env.giapha_db)
+  const rows = await db
+    .select({
+      id:           persons.id,
+      name:         persons.name,
+      gender:       persons.gender,
+      nickname:     persons.nickname,
+      avatarKey:    persons.avatarKey,
+      bio:          persons.bio,
+      address:      persons.address,
+      email:        persons.email,
+      phone:        persons.phone,
+      birthYear:    persons.birthYear,
+      birthMonth:   persons.birthMonth,
+      birthDay:     persons.birthDay,
+      birthIsLunar: persons.birthIsLunar,
+      deathYear:    persons.deathYear,
+      deathMonth:   persons.deathMonth,
+      deathDay:     persons.deathDay,
+      deathIsLunar: persons.deathIsLunar,
+      isAlive:      persons.isAlive,
+      notes:        persons.notes,
+      createdAt:    persons.createdAt,
+      updatedAt:    persons.updatedAt,
+      fatherId:     families.parent1Id,
+      motherId:     families.parent2Id,
+    })
+    .from(persons)
+    .leftJoin(familyMembers, eq(familyMembers.personId, persons.id))
+    .leftJoin(families, eq(families.id, familyMembers.familyId))
+    .all()
+
+  return c.json(rows.map(r => ({
+    id:           r.id,
+    name:         r.name,
+    gender:       r.gender ?? null,
+    nickname:     r.nickname ?? null,
+    avatarUrl:    r.avatarKey ? `/api/avatars/${r.avatarKey}` : null,
+    bio:          r.bio ?? null,
+    address:      r.address ?? null,
+    email:        r.email ?? null,
+    phone:        r.phone ?? null,
+    birthYear:    r.birthYear ?? null,
+    birthMonth:   r.birthMonth ?? null,
+    birthDay:     r.birthDay ?? null,
+    birthIsLunar: r.birthIsLunar ?? false,
+    deathYear:    r.deathYear ?? null,
+    deathMonth:   r.deathMonth ?? null,
+    deathDay:     r.deathDay ?? null,
+    deathIsLunar: r.deathIsLunar ?? false,
+    isAlive:      r.isAlive,
+    notes:        r.notes ?? null,
+    fatherId:     r.fatherId ?? null,
+    motherId:     r.motherId ?? null,
+  })))
+})
+
+// POST /api/editor/persons/batch — batch upsert + delete + family sync
+// Must be registered before /persons/:id routes
+const batchUpsertItemSchema = z.object({
+  id:           z.string().uuid().optional(),
+  name:         z.string().min(1),
+  gender:       z.enum(['male', 'female', 'other']).nullable().optional(),
+  nickname:     z.string().nullable().optional(),
+  bio:          z.string().nullable().optional(),
+  address:      z.string().nullable().optional(),
+  email:        z.string().nullable().optional(),
+  phone:        z.string().nullable().optional(),
+  birthYear:    z.number().int().nullable().optional(),
+  birthMonth:   z.number().int().nullable().optional(),
+  birthDay:     z.number().int().nullable().optional(),
+  birthIsLunar: z.boolean().optional(),
+  deathYear:    z.number().int().nullable().optional(),
+  deathMonth:   z.number().int().nullable().optional(),
+  deathDay:     z.number().int().nullable().optional(),
+  deathIsLunar: z.boolean().optional(),
+  isAlive:      z.boolean().optional(),
+  notes:        z.string().nullable().optional(),
+  fatherId:     z.string().uuid().nullable().optional(),
+  motherId:     z.string().uuid().nullable().optional(),
+})
+
+const batchSchema = z.object({
+  upsert: z.array(batchUpsertItemSchema).optional().default([]),
+  delete: z.array(z.string().uuid()).optional().default([]),
+})
+
+editorRoutes.post('/persons/batch', async (c) => {
+  const parsed = batchSchema.safeParse(await c.req.json())
+  if (!parsed.success) return c.json({ error: 'Dữ liệu không hợp lệ' }, 400)
+  const { upsert, delete: deleteIds } = parsed.data
+
+  const db = drizzle(c.env.giapha_db) as DB
+  const saved: string[] = []
+  const errors: { name: string; error: string }[] = []
+
+  for (const item of upsert) {
+    const { id, fatherId, motherId, ...fields } = item
+    try {
+      let personId: string
+      if (id) {
+        await db.update(persons)
+          .set({ ...fields, updatedAt: new Date().toISOString() })
+          .where(eq(persons.id, id))
+        personId = id
+      } else {
+        personId = crypto.randomUUID()
+        await db.insert(persons).values({
+          id: personId,
+          name: fields.name,
+          gender:       fields.gender       ?? null,
+          nickname:     fields.nickname     ?? null,
+          bio:          fields.bio          ?? null,
+          address:      fields.address      ?? null,
+          email:        fields.email        ?? null,
+          phone:        fields.phone        ?? null,
+          birthYear:    fields.birthYear    ?? null,
+          birthMonth:   fields.birthMonth   ?? null,
+          birthDay:     fields.birthDay     ?? null,
+          birthIsLunar: fields.birthIsLunar ?? false,
+          deathYear:    fields.deathYear    ?? null,
+          deathMonth:   fields.deathMonth   ?? null,
+          deathDay:     fields.deathDay     ?? null,
+          deathIsLunar: fields.deathIsLunar ?? false,
+          isAlive:      fields.isAlive      ?? true,
+          notes:        fields.notes        ?? null,
+        })
+      }
+
+      // Sync parent/family assignment when fatherId or motherId is explicitly provided
+      if ('fatherId' in item || 'motherId' in item) {
+        await syncParents(db, personId, fatherId ?? null, motherId ?? null)
+      }
+
+      saved.push(personId)
+    } catch (err) {
+      errors.push({ name: item.name, error: String(err) })
+    }
+  }
+
+  const deleted: string[] = []
+  for (const personId of deleteIds) {
+    try {
+      // Find families where this person is a child (via familyMembers)
+      const membership = await db
+        .select({ familyId: familyMembers.familyId })
+        .from(familyMembers)
+        .where(eq(familyMembers.personId, personId))
+        .get()
+
+      // Find families where this person is a parent (parent1_id or parent2_id)
+      const parentFamilies1 = await db
+        .select({ id: families.id })
+        .from(families)
+        .where(eq(families.parent1Id, personId))
+        .all()
+      const parentFamilies2 = await db
+        .select({ id: families.id })
+        .from(families)
+        .where(eq(families.parent2Id, personId))
+        .all()
+      const parentFamilyIds = [...parentFamilies1, ...parentFamilies2].map(f => f.id)
+
+      await db.delete(persons).where(eq(persons.id, personId))
+
+      // Clean up child-of family if it now has no children
+      if (membership) {
+        const [{ remaining }] = await db
+          .select({ remaining: count() })
+          .from(familyMembers)
+          .where(eq(familyMembers.familyId, membership.familyId))
+        if (remaining === 0) {
+          await db.delete(families).where(eq(families.id, membership.familyId))
+        }
+      }
+
+      // Clean up parent-of families: after ON DELETE SET NULL, delete any family
+      // where both parents are now null (no remaining parent)
+      for (const familyId of parentFamilyIds) {
+        const family = await db
+          .select({ p1: families.parent1Id, p2: families.parent2Id })
+          .from(families)
+          .where(eq(families.id, familyId))
+          .get()
+        if (family && family.p1 === null && family.p2 === null) {
+          await db.delete(families).where(eq(families.id, familyId))
+        }
+      }
+
+      deleted.push(personId)
+    } catch (err) {
+      errors.push({ name: personId, error: String(err) })
+    }
+  }
+
+  return c.json({ saved, deleted, errors }, errors.length > 0 ? 207 : 200)
+})
 
 editorRoutes.post('/persons', async (c) => {
   const db = drizzle(c.env.giapha_db)
