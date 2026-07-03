@@ -9,7 +9,7 @@ function PersonNode({ data }: Props) {
 
   return (
     <div
-      className={`w-40 rounded-xl border shadow-sm px-3 py-2 text-sm select-none
+      className={`w-max rounded-xl border shadow-sm px-3 py-2 text-sm select-none
         ${data.isAlive ? 'bg-white border-stone-200' : 'bg-stone-50 border-stone-300'}`}
     >
       <Handle type="target" position={Position.Top} className="!w-2 !h-2" />
@@ -24,7 +24,7 @@ function PersonNode({ data }: Props) {
           </div>
         )}
         <div className="min-w-0">
-          <p className="font-semibold text-stone-800 truncate leading-tight">{data.name}</p>
+          <p className="font-semibold text-stone-800 whitespace-nowrap leading-tight">{data.name}</p>
           {data.birthYear && (
             <p className="text-xs text-stone-400">
               {data.birthYear}
