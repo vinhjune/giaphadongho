@@ -47,7 +47,7 @@ export default function TreePage() {
   )
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50">
+    <div className="h-screen flex flex-col bg-stone-50">
       <AppNav />
       {graph.hasEndogamy && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-800 text-center">

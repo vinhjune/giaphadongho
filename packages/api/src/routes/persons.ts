@@ -57,12 +57,33 @@ personsRoutes.get('/graph/data', async (c) => {
     db.select().from(familyMembers).all(),
   ])
 
-  // Endogamy detection: a person is both a parent and a listed child
-  const childIds = new Set(allMembers.map(m => m.personId))
-  const parentIds = new Set([
-    ...allFamilies.flatMap(f => [f.parent1Id, f.parent2Id].filter(Boolean) as string[]),
-  ])
-  const hasEndogamy = [...childIds].some(id => parentIds.has(id))
+  // Endogamy detection: two spouses in a family share a common ancestor
+  const personToParentFamily = new Map<string, string>()
+  for (const m of allMembers) personToParentFamily.set(m.personId, m.familyId)
+  const familyParents = new Map<string, string[]>()
+  for (const f of allFamilies) {
+    familyParents.set(f.id, [f.parent1Id, f.parent2Id].filter(Boolean) as string[])
+  }
+  function getAncestors(personId: string): Set<string> {
+    const ancestors = new Set<string>()
+    const queue = [personId]
+    while (queue.length > 0) {
+      const pid = queue.shift()!
+      const fid = personToParentFamily.get(pid)
+      if (!fid) continue
+      for (const parent of familyParents.get(fid) ?? []) {
+        if (!ancestors.has(parent)) { ancestors.add(parent); queue.push(parent) }
+      }
+    }
+    return ancestors
+  }
+  let hasEndogamy = false
+  outer: for (const f of allFamilies) {
+    if (!f.parent1Id || !f.parent2Id) continue
+    const a1 = getAncestors(f.parent1Id)
+    const a2 = getAncestors(f.parent2Id)
+    for (const a of a1) { if (a2.has(a)) { hasEndogamy = true; break outer } }
+  }
 
   const nodes = [
     ...allPersons.map(p => ({
