@@ -14,7 +14,7 @@ const BLANK: Partial<PersonFull> = {
   name: '', gender: null, nickname: null, bio: null,
   address: null, email: null, phone: null,
   birthYear: null, birthMonth: null, birthDay: null, birthIsLunar: false,
-  deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
+  deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: true,
   isAlive: true, notes: null, avatarUrl: null,
 }
 
@@ -98,6 +98,7 @@ export default function PersonForm({ person, onSaved, onCancel }: Props) {
 
       <div className="grid grid-cols-3 gap-2">
         <DatePartInputs
+          lunar={false}
           day={form.birthDay ?? null} month={form.birthMonth ?? null} year={form.birthYear ?? null}
           onDay={v => set('birthDay', v)} onMonth={v => set('birthMonth', v)} onYear={v => set('birthYear', v)}
         />
@@ -111,6 +112,7 @@ export default function PersonForm({ person, onSaved, onCancel }: Props) {
       {!form.isAlive && (
         <div className="grid grid-cols-3 gap-2">
           <DatePartInputs
+            lunar={true}
             day={form.deathDay ?? null} month={form.deathMonth ?? null} year={form.deathYear ?? null}
             onDay={v => set('deathDay', v)} onMonth={v => set('deathMonth', v)} onYear={v => set('deathYear', v)}
           />

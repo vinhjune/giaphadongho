@@ -1,11 +1,6 @@
 import type { ChangeEvent } from 'react'
 
-// Lunar month names in Vietnamese (1=Giêng … 12=Chạp)
-const MONTH_OPTS = [
-  [1, 'Giêng'], [2, 'Hai'], [3, 'Ba'], [4, 'Tư'],
-  [5, 'Năm'], [6, 'Sáu'], [7, 'Bảy'], [8, 'Tám'],
-  [9, 'Chín'], [10, 'Mười'], [11, 'Mười Một'], [12, 'Chạp'],
-] as const
+const LUNAR_NAMES = ['Giêng','Hai','Ba','Tư','Năm','Sáu','Bảy','Tám','Chín','Mười','Mười Một','Chạp']
 
 type Props = {
   day:     number | null
@@ -14,12 +9,17 @@ type Props = {
   onDay:   (v: number | null) => void
   onMonth: (v: number | null) => void
   onYear:  (v: number | null) => void
+  /** true → tháng hiển thị tên âm lịch (Giêng–Chạp); false (default) → số 1–12 */
+  lunar?:  boolean
 }
 
 const cls = 'mt-0.5 w-full border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400'
 
-/** Day | Month | Year inputs with Vietnamese month names and basic range validation. */
-export default function DatePartInputs({ day, month, year, onDay, onMonth, onYear }: Props) {
+/** Day | Month | Year inputs with range validation.
+ *  lunar=false → month options 1–12 (dương lịch)
+ *  lunar=true  → month options Giêng–Chạp (âm lịch)
+ */
+export default function DatePartInputs({ day, month, year, onDay, onMonth, onYear, lunar = false }: Props) {
   function handleDay(e: ChangeEvent<HTMLInputElement>) {
     const s = e.target.value
     if (!s) return onDay(null)
@@ -49,7 +49,7 @@ export default function DatePartInputs({ day, month, year, onDay, onMonth, onYea
         />
       </label>
 
-      {/* Tháng — select hỗ trợ cả chọn lẫn gõ phím số/tên tháng âm lịch */}
+      {/* Tháng */}
       <label className="block">
         <span className="text-xs text-stone-500">Tháng</span>
         <select
@@ -58,8 +58,10 @@ export default function DatePartInputs({ day, month, year, onDay, onMonth, onYea
           className={cls}
         >
           <option value="">— Chọn —</option>
-          {MONTH_OPTS.map(([v, name]) => (
-            <option key={v} value={v}>{v} – {name}</option>
+          {LUNAR_NAMES.map((name, i) => (
+            <option key={i + 1} value={i + 1}>
+              {lunar ? name : String(i + 1)}
+            </option>
           ))}
         </select>
       </label>
