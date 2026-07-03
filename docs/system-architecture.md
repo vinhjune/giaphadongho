@@ -40,7 +40,16 @@ Browser
 | GET | `/api/health` | none | Liveness check |
 | POST | `/api/auth/login` | none | Issue JWT + session |
 | POST | `/api/auth/logout` | viewer+ | Invalidate session in KV |
-| GET | `/api/auth/me` | viewer+ | Current user info |
+| GET | `/api/auth/me` | viewer+ | Current user info (includes personId) |
+| GET | `/api/profile` | viewer+ | Current user + linked PersonFull |
+| PUT | `/api/profile/person` | viewer+ | Update own linked person data |
+| PUT | `/api/profile/password` | viewer+ | Change password |
+| PUT | `/api/profile/username` | viewer+ | Change username (invalidates sessions, returns new JWT) |
+| POST | `/api/profile/avatar` | viewer+ | Upload avatar for own linked person |
+| GET | `/api/editor/users` | editor | List users with linked person name |
+| POST | `/api/editor/users` | editor | Create user account |
+| POST | `/api/editor/persons/:id/user` | editor | Quick-create user linked to person (password = username) |
+| PUT | `/api/editor/users/:id/person` | editor | Link / unlink person to user |
 | GET | `/api/public/landing` | none | Landing page data (settings + events) |
 | GET | `/api/persons` | none* | Person list (public fields for guests) |
 | GET | `/api/persons/graph/data` | none* | Tree nodes + edges |
@@ -88,6 +97,7 @@ users               persons
   password_hash       gender | nickname | bio
   role (editor|viewer) address | email | phone  ← viewer/editor only
   is_active           birth_year/month/day + is_lunar
+  person_id (FK → persons, UNIQUE, nullable)  ← links account to genealogy member
                       death_year/month/day + is_lunar ← viewer/editor only
                       is_alive
                       avatar_key (R2 key)
@@ -126,7 +136,8 @@ packages/frontend/src/
 │   ├── LandingPage         # Public: family name, intro, events
 │   ├── TreePage            # @xyflow/react genealogy graph
 │   ├── ListPage            # AG Grid member table
-│   ├── EditorPage          # Person + family CRUD (editor only)
+│   ├── EditorPage          # Person + family CRUD + user management (editor only)
+│   ├── ProfilePage         # Personal info, username & password update (viewer+)
 │   └── ContentEditorPage   # Landing page content editor (editor only)
 ├── components/
 │   ├── tree/               # FamilyNode, PersonNode (React Flow nodes)

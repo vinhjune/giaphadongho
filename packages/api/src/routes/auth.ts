@@ -51,7 +51,9 @@ auth.post('/logout', requireAuth, async (c) => {
 
 auth.get('/me', requireAuth, async (c) => {
   const user = c.get('user')
-  return c.json({ id: user.id, username: user.username, role: user.role })
+  const db = drizzle(c.env.giapha_db)
+  const row = await db.select({ personId: users.personId }).from(users).where(eq(users.id, user.id)).get()
+  return c.json({ id: user.id, username: user.username, role: user.role, personId: row?.personId ?? null })
 })
 
 export default auth

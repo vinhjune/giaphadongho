@@ -26,7 +26,10 @@ export default function LoginPage() {
         return
       }
       const data = (await res.json()) as { token: string; role: 'editor' | 'viewer'; username: string }
-      login(data.token, { username: data.username, role: data.role })
+      // Fetch personId from /me after login
+      const meRes = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${data.token}` } })
+      const me = meRes.ok ? (await meRes.json()) as { personId: string | null } : { personId: null }
+      login(data.token, { username: data.username, role: data.role, personId: me.personId })
       navigate('/')
     } catch {
       setError('Lỗi kết nối. Vui lòng thử lại.')

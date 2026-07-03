@@ -7,6 +7,7 @@ import publicRoutes from './routes/public'
 import personsRoutes from './routes/persons'
 import editorRoutes from './routes/editor'
 import contentRoutes from './routes/content'
+import profileRoutes from './routes/profile'
 import type { HonoEnv } from './types'
 
 const app = new Hono<HonoEnv>()
@@ -25,6 +26,7 @@ app.route('/api/public', publicRoutes)
 app.route('/api/persons', personsRoutes)
 app.route('/api/editor', editorRoutes)
 app.route('/api/content', contentRoutes)
+app.route('/api/profile', profileRoutes)
 
 // Serve R2 avatars — public read, no auth required
 app.get('/api/avatars/:key{.+}', async (c) => {

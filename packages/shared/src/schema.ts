@@ -8,6 +8,7 @@ export const users = sqliteTable('users', {
   passwordHash: text('password_hash').notNull(),
   role:         text('role', { enum: ['editor', 'viewer'] }).notNull().default('viewer'),
   isActive:     integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  personId:     text('person_id').unique().references(() => persons.id, { onDelete: 'set null' }),
   createdAt:    text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 })
 

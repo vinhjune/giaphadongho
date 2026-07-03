@@ -1,24 +1,33 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 
-type Props = { personId: string; currentUrl: string | null; onUploaded: (url: string) => void }
+type Props = {
+  /** Full upload URL. Defaults to the editor endpoint when personId is provided. */
+  uploadUrl?: string
+  /** Legacy convenience: used to build the default editor URL */
+  personId?: string
+  currentUrl: string | null
+  onUploaded: (url: string) => void
+}
 
-export default function AvatarUpload({ personId, currentUrl, onUploaded }: Props) {
+export default function AvatarUpload({ uploadUrl, personId, currentUrl, onUploaded }: Props) {
   const { token } = useAuth()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const resolvedUrl = uploadUrl ?? (personId ? `/api/editor/persons/${personId}/avatar` : null)
+
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !resolvedUrl) return
     if (file.size > 2 * 1024 * 1024) { setError('Tệp tối đa 2 MB'); return }
     setError(null)
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await fetch(`/api/editor/persons/${personId}/avatar`, {
+      const res = await fetch(resolvedUrl, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: fd,

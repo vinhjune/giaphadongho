@@ -25,6 +25,7 @@ export default function AppNav({ familyName }: { familyName?: string }) {
                 <Link to="/content" className="text-amber-700 hover:underline">Nội dung</Link>
               </>
             )}
+            <Link to="/profile" className="text-amber-700 hover:underline">Hồ sơ</Link>
             <button onClick={handleLogout} className="text-stone-500 hover:text-stone-800 transition-colors">
               Đăng xuất
             </button>
