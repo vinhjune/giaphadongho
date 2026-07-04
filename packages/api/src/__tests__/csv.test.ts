@@ -1,4 +1,4 @@
-import { UNIFIED_CSV_HEADERS } from '@giapha/shared/csv-schema'
+import { UNIFIED_CSV_HEADERS, CSV_COLUMN_LABELS, CSV_COLUMN_FIELDS } from '@giapha/shared/csv-schema'
 import { describe, it, expect } from 'vitest'
 
 describe('CSV schema constants', () => {
@@ -32,5 +32,22 @@ describe('CSV schema constants', () => {
   })
   it('has no duplicate columns', () => {
     expect(new Set(UNIFIED_CSV_HEADERS).size).toBe(UNIFIED_CSV_HEADERS.length)
+  })
+})
+
+describe('CSV_COLUMN_LABELS', () => {
+  it('maps type → loai', () => expect(CSV_COLUMN_LABELS.type).toBe('loai'))
+  it('maps id → ma', () => expect(CSV_COLUMN_LABELS.id).toBe('ma'))
+  it('maps name → ho_ten', () => expect(CSV_COLUMN_LABELS.name).toBe('ho_ten'))
+  it('maps isAlive → con_song', () => expect(CSV_COLUMN_LABELS.isAlive).toBe('con_song'))
+  it('covers every field in UNIFIED_CSV_HEADERS', () => {
+    UNIFIED_CSV_HEADERS.forEach(field => {
+      expect(CSV_COLUMN_LABELS[field]).toBeTruthy()
+    })
+  })
+  it('reverse map (CSV_COLUMN_FIELDS) round-trips correctly', () => {
+    UNIFIED_CSV_HEADERS.forEach(field => {
+      expect(CSV_COLUMN_FIELDS[CSV_COLUMN_LABELS[field]]).toBe(field)
+    })
   })
 })

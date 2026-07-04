@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { serializeToUnifiedCsv } from '../utils/csv-export'
-import { UNIFIED_CSV_HEADERS } from '@giapha/shared/csv-schema'
+import { UNIFIED_CSV_HEADERS, CSV_COLUMN_LABELS, CSV_COLUMN_FIELDS } from '@giapha/shared/csv-schema'
 import Papa from 'papaparse'
+
+// Helper: parse a serialized CSV back to English-keyed rows (mirrors parseUnifiedCsv's transformHeader)
+const parseWithEnglishKeys = (csv: string) =>
+  Papa.parse(csv, { header: true, transformHeader: h => CSV_COLUMN_FIELDS[h] ?? h })
 
 const personWithParents = {
   id: 'p1', name: 'Nguyễn Văn A', gender: 'male', nickname: 'Anh',
@@ -30,29 +34,32 @@ describe('serializeToUnifiedCsv', () => {
     expect(typeof csv).toBe('string')
   })
 
-  it('header row matches UNIFIED_CSV_HEADERS', () => {
+  it('header row uses Vietnamese no-diacritics labels', () => {
     const csv = serializeToUnifiedCsv([personWithParents], [familyFixture])
     const parsed = Papa.parse(csv, { header: true })
-    expect(parsed.meta.fields).toEqual([...UNIFIED_CSV_HEADERS])
+    const viHeaders = UNIFIED_CSV_HEADERS.map(h => CSV_COLUMN_LABELS[h])
+    expect(parsed.meta.fields).toEqual(viHeaders)
+    expect(parsed.meta.fields?.[0]).toBe('loai')
+    expect(parsed.meta.fields?.[1]).toBe('ma')
   })
 
   it('person rows have type=person', () => {
     const csv = serializeToUnifiedCsv([personWithParents, personNoParents], [familyFixture])
-    const rows = Papa.parse(csv, { header: true }).data as { type: string }[]
+    const rows = parseWithEnglishKeys(csv).data as { type: string }[]
     const personRows = rows.filter(r => r.type === 'person')
     expect(personRows).toHaveLength(2)
   })
 
   it('family rows have type=family', () => {
     const csv = serializeToUnifiedCsv([personWithParents], [familyFixture])
-    const rows = Papa.parse(csv, { header: true }).data as { type: string }[]
+    const rows = parseWithEnglishKeys(csv).data as { type: string }[]
     const familyRows = rows.filter(r => r.type === 'family')
     expect(familyRows).toHaveLength(1)
   })
 
   it('person rows precede family rows in output', () => {
     const csv = serializeToUnifiedCsv([personWithParents], [familyFixture])
-    const rows = Papa.parse(csv, { header: true }).data as { type: string }[]
+    const rows = parseWithEnglishKeys(csv).data as { type: string }[]
     const firstFamilyIdx = rows.findIndex(r => r.type === 'family')
     const lastPersonIdx = rows.map(r => r.type).lastIndexOf('person')
     expect(lastPersonIdx).toBeLessThan(firstFamilyIdx)
@@ -60,19 +67,19 @@ describe('serializeToUnifiedCsv', () => {
 
   it('serializes boolean false as "false"', () => {
     const csv = serializeToUnifiedCsv([personWithParents], [])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.birthIsLunar).toBe('false')
   })
 
   it('serializes boolean true as "true"', () => {
     const csv = serializeToUnifiedCsv([personWithParents], [])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.isAlive).toBe('true')
   })
 
   it('serializes null as empty string', () => {
     const csv = serializeToUnifiedCsv([personNoParents], [])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.deathDay).toBe('')
     expect(row.fatherId).toBe('')
     expect(row.motherId).toBe('')
@@ -80,14 +87,14 @@ describe('serializeToUnifiedCsv', () => {
 
   it('serializes fatherId and motherId', () => {
     const csv = serializeToUnifiedCsv([personWithParents], [])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.fatherId).toBe('p2')
     expect(row.motherId).toBe('p3')
   })
 
   it('family row serializes fatherId and motherId', () => {
     const csv = serializeToUnifiedCsv([], [familyFixture])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.fatherId).toBe('p2')
     expect(row.motherId).toBe('p3')
     expect(row.status).toBe('active')
@@ -95,14 +102,14 @@ describe('serializeToUnifiedCsv', () => {
 
   it('person row has empty family-only columns', () => {
     const csv = serializeToUnifiedCsv([personWithParents], [])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.orderP1).toBe('')
     expect(row.status).toBe('')
   })
 
   it('family row has empty person columns (except id, notes)', () => {
     const csv = serializeToUnifiedCsv([], [familyFixture])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.name).toBe('')
     expect(row.gender).toBe('')
     expect(row.birthYear).toBe('')
@@ -111,21 +118,21 @@ describe('serializeToUnifiedCsv', () => {
   it('person with linked user exports username and userRole', () => {
     const personWithUser = { ...personWithParents, username: 'admin', userRole: 'editor' }
     const csv = serializeToUnifiedCsv([personWithUser], [])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.username).toBe('admin')
     expect(row.userRole).toBe('editor')
   })
 
   it('person without linked user has empty username and userRole', () => {
     const csv = serializeToUnifiedCsv([personNoParents], [])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.username).toBe('')
     expect(row.userRole).toBe('')
   })
 
   it('family row has empty username and userRole', () => {
     const csv = serializeToUnifiedCsv([], [familyFixture])
-    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.username).toBe('')
     expect(row.userRole).toBe('')
   })

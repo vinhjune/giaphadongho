@@ -5,6 +5,7 @@ import {
   buildFamilyMemberships,
 } from '../utils/csv-import'
 import { serializeToUnifiedCsv } from '../utils/csv-export'
+import { CSV_COLUMN_LABELS } from '@giapha/shared/csv-schema'
 
 // Minimal fixtures that produce valid unified CSV via the serializer
 const personA = {
@@ -130,10 +131,25 @@ describe('parseUnifiedCsv — userLinks', () => {
   })
 
   it('parses without userLinks for old CSVs lacking the columns', () => {
-    const csv = makeValidCsv().replace(/,username,userRole/, '').replace(/,,$/gm, '')
+    // Vietnamese headers: tai_khoan = username, vai_tro = userRole
+    const csv = makeValidCsv().replace(/,tai_khoan,vai_tro/, '').replace(/,,$/gm, '')
     const result = parseUnifiedCsv(csv)
     expect(result.errors).toHaveLength(0)
     expect(result.userLinks).toHaveLength(0)
+  })
+
+  it('parses old CSVs with English headers (backward-compatible)', () => {
+    // Replace Vietnamese header row with English equivalents
+    const viCsv = makeValidCsv()
+    const firstLine = viCsv.split('\n')[0]
+    const enHeaders = firstLine.split(',').map((h: string) => {
+      const found = Object.entries(CSV_COLUMN_LABELS).find(([, v]) => v === h)
+      return found ? found[0] : h
+    }).join(',')
+    const enCsv = enHeaders + '\n' + viCsv.split('\n').slice(1).join('\n')
+    const result = parseUnifiedCsv(enCsv)
+    expect(result.errors).toHaveLength(0)
+    expect(result.members).toHaveLength(3)
   })
 })
 

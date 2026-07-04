@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import { UNIFIED_CSV_HEADERS } from '@giapha/shared/csv-schema'
+import { UNIFIED_CSV_HEADERS, CSV_COLUMN_FIELDS } from '@giapha/shared/csv-schema'
 import type { CsvMemberRow, CsvFamilyRow, CsvUnifiedRow } from '@giapha/shared/csv-schema'
 
 const VALID_GENDERS = new Set(['male', 'female', 'other', ''])
@@ -15,7 +15,13 @@ export function parseUnifiedCsv(csv: string): {
   userLinks: CsvUserLink[]
   errors: string[]
 } {
-  const result = Papa.parse<CsvUnifiedRow>(csv, { header: true, skipEmptyLines: true })
+  // transformHeader: maps Vietnamese no-diacritics labels → English field names.
+  // Unknown headers pass through unchanged, giving backward-compat with old English-header CSVs.
+  const result = Papa.parse<CsvUnifiedRow>(csv, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: (h: string) => CSV_COLUMN_FIELDS[h] ?? h,
+  })
   const errors: string[] = []
 
   if (!result.meta.fields?.includes('type')) {

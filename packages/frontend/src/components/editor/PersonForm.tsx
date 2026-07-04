@@ -105,8 +105,8 @@ export default function PersonForm({ person, onSaved, onCancel }: Props) {
       </div>
 
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={form.isAlive ?? true} onChange={e => set('isAlive', e.target.checked)} className="rounded" />
-        Còn sống
+        <input type="checkbox" checked={!(form.isAlive ?? true)} onChange={e => set('isAlive', !e.target.checked)} className="rounded" />
+        Đã mất
       </label>
 
       {!form.isAlive && (

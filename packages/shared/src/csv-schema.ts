@@ -59,3 +59,38 @@ export type CsvMemberRow = Pick<CsvUnifiedRow,
 export type CsvFamilyRow = Pick<CsvUnifiedRow,
   'id' | 'fatherId' | 'motherId' | 'orderP1' | 'orderP2' | 'status' | 'notes'
 >
+
+// Vietnamese no-diacritics labels for CSV column headers (internal field → CSV label)
+export const CSV_COLUMN_LABELS: Record<keyof CsvUnifiedRow, string> = {
+  type:         'loai',
+  id:           'ma',
+  name:         'ho_ten',
+  gender:       'gioi_tinh',
+  nickname:     'ten_goi',
+  bio:          'tieu_su',
+  address:      'dia_chi',
+  email:        'email',
+  phone:        'dien_thoai',
+  birthYear:    'nam_sinh',
+  birthMonth:   'thang_sinh',
+  birthDay:     'ngay_sinh',
+  birthIsLunar: 'sinh_am_lich',
+  deathYear:    'nam_mat',
+  deathMonth:   'thang_mat',
+  deathDay:     'ngay_mat',
+  deathIsLunar: 'mat_am_lich',
+  isAlive:      'con_song',
+  fatherId:     'ma_cha',
+  motherId:     'ma_me',
+  orderP1:      'thu_tu_cha',
+  orderP2:      'thu_tu_me',
+  status:       'tinh_trang',
+  notes:        'ghi_chu',
+  username:     'tai_khoan',
+  userRole:     'vai_tro',
+}
+
+// Reverse map: CSV label → internal field name (for import / backward-compat)
+export const CSV_COLUMN_FIELDS: Record<string, keyof CsvUnifiedRow> = Object.fromEntries(
+  (Object.entries(CSV_COLUMN_LABELS) as [keyof CsvUnifiedRow, string][]).map(([k, v]) => [v, k])
+) as Record<string, keyof CsvUnifiedRow>

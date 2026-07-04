@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import { UNIFIED_CSV_HEADERS } from '@giapha/shared/csv-schema'
+import { UNIFIED_CSV_HEADERS, CSV_COLUMN_LABELS } from '@giapha/shared/csv-schema'
 import type { CsvUnifiedRow } from '@giapha/shared/csv-schema'
 
 type PersonRow = {
@@ -57,5 +57,10 @@ export function serializeToUnifiedCsv(persons: PersonRow[], families: FamilyRow[
     ...persons.map(personToUnifiedRow),
     ...families.map(familyToUnifiedRow),
   ]
-  return Papa.unparse(rows, { columns: [...UNIFIED_CSV_HEADERS] })
+  // Output Vietnamese no-diacritics column headers; data objects use English keys so remap.
+  const viColumns = UNIFIED_CSV_HEADERS.map(f => CSV_COLUMN_LABELS[f])
+  const viRows = rows.map(row =>
+    Object.fromEntries(UNIFIED_CSV_HEADERS.map(f => [CSV_COLUMN_LABELS[f], row[f]]))
+  )
+  return Papa.unparse(viRows, { columns: viColumns })
 }

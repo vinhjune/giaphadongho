@@ -204,8 +204,8 @@ function PersonInfoSection({
           Ngày sinh âm lịch
         </label>
         <label className="flex items-center gap-2 text-sm text-stone-700">
-          <input type="checkbox" checked={form.isAlive} onChange={e => setForm(f => ({ ...f, isAlive: e.target.checked }))} />
-          Còn sống
+          <input type="checkbox" checked={!form.isAlive} onChange={e => setForm(f => ({ ...f, isAlive: !e.target.checked }))} />
+          Đã mất
         </label>
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-1">Ghi chú</label>
