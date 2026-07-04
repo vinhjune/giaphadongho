@@ -6,7 +6,8 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./types": "./src/types.ts",
-    "./date-utils": "./src/date-utils.ts"
+    "./date-utils": "./src/date-utils.ts",
+    "./csv-schema": "./src/csv-schema.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.38.0",

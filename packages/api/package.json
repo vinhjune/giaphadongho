@@ -2,17 +2,25 @@
   "name": "@giapha/api",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {
     "@giapha/shared": "*",
     "drizzle-orm": "^0.38.0",
+    "fflate": "^0.8.2",
     "hono": "^4.0.0",
     "jose": "^6.2.3",
+    "papaparse": "^5.4.1",
     "zod": "^3.22.3"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
+    "@types/papaparse": "^5.3.14",
     "drizzle-kit": "^0.30.0",
     "typescript": "^5.0.0",
+    "vitest": "^4.1.9",
     "wrangler": "^3.91.0"
   }
 }

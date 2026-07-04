@@ -8,6 +8,7 @@ import personsRoutes from './routes/persons'
 import editorRoutes from './routes/editor'
 import contentRoutes from './routes/content'
 import profileRoutes from './routes/profile'
+import csvRoutes from './routes/csv'
 import { ensureDefaultAdmin } from './lib/init'
 import type { HonoEnv } from './types'
 
@@ -30,6 +31,7 @@ app.route('/api/persons', personsRoutes)
 app.route('/api/editor', editorRoutes)
 app.route('/api/content', contentRoutes)
 app.route('/api/profile', profileRoutes)
+app.route('/api/editor', csvRoutes)
 
 // Serve R2 avatars — public read, no auth required
 app.get('/api/avatars/:key{.+}', async (c) => {
