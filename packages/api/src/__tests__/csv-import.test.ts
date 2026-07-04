@@ -32,9 +32,8 @@ const personChild = {
   username: null, userRole: null,
 }
 const familyAB = {
-  id: 'f1', parent1Id: 'p1', parent2Id: 'p2', orderP1: 1, orderP2: 1,
-  marriedYear: 1978, marriedMonth: null, marriedDay: null, marriedIsLunar: false,
-  endYear: null, endMonth: null, endDay: null, status: 'active', notes: null,
+  id: 'f1', fatherId: 'p1', motherId: 'p2', orderP1: 1, orderP2: 1,
+  status: 'active', notes: null,
 }
 
 function makeValidCsv() {
@@ -55,10 +54,10 @@ describe('parseUnifiedCsv', () => {
     expect(members[0].name).toBe('Nguyễn Văn A')
   })
 
-  it('parses family parent1Id correctly', () => {
+  it('parses family fatherId correctly', () => {
     const { families } = parseUnifiedCsv(makeValidCsv())
     expect(families[0].id).toBe('f1')
-    expect(families[0].parent1Id).toBe('p1')
+    expect(families[0].fatherId).toBe('p1')
   })
 
   it('preserves fatherId and motherId on child member', () => {
@@ -152,8 +151,8 @@ describe('validateImportData', () => {
     expect(errors.some(e => e.includes('ghost-id'))).toBe(true)
   })
 
-  it('returns error when family parent1Id references missing person', () => {
-    const ghostFamily = { ...familyAB, parent1Id: 'ghost-id' }
+  it('returns error when family fatherId references missing person', () => {
+    const ghostFamily = { ...familyAB, fatherId: 'ghost-id' }
     const csv = serializeToUnifiedCsv([personA, personB], [ghostFamily])
     const { members, families } = parseUnifiedCsv(csv)
     const errors = validateImportData(members, families)

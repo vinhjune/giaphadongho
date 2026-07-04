@@ -37,13 +37,6 @@ export type Family = {
   parent2Id: string | null
   orderP1: number
   orderP2: number
-  marriedYear: number | null
-  marriedMonth: number | null
-  marriedDay: number | null
-  marriedIsLunar: boolean
-  endYear: number | null
-  endMonth: number | null
-  endDay: number | null
   status: 'active' | 'divorced' | 'widowed' | null
   notes: string | null
   /** Children's person IDs — populated via JOIN */

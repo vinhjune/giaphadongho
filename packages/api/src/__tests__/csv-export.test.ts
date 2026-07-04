@@ -20,9 +20,8 @@ const personNoParents = {
   username: null, userRole: null,
 }
 const familyFixture = {
-  id: 'f1', parent1Id: 'p2', parent2Id: 'p3', orderP1: 1, orderP2: 1,
-  marriedYear: 1985, marriedMonth: 6, marriedDay: 10, marriedIsLunar: true,
-  endYear: null, endMonth: null, endDay: null, status: 'active', notes: null,
+  id: 'f1', fatherId: 'p2', motherId: 'p3', orderP1: 1, orderP2: 1,
+  status: 'active', notes: null,
 }
 
 describe('serializeToUnifiedCsv', () => {
@@ -86,20 +85,18 @@ describe('serializeToUnifiedCsv', () => {
     expect(row.motherId).toBe('p3')
   })
 
-  it('family row serializes marriage data correctly', () => {
+  it('family row serializes fatherId and motherId', () => {
     const csv = serializeToUnifiedCsv([], [familyFixture])
     const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
-    expect(row.parent1Id).toBe('p2')
-    expect(row.marriedIsLunar).toBe('true')
-    expect(row.endYear).toBe('')
+    expect(row.fatherId).toBe('p2')
+    expect(row.motherId).toBe('p3')
     expect(row.status).toBe('active')
   })
 
-  it('person row has empty family columns', () => {
+  it('person row has empty family-only columns', () => {
     const csv = serializeToUnifiedCsv([personWithParents], [])
     const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
-    expect(row.parent1Id).toBe('')
-    expect(row.marriedYear).toBe('')
+    expect(row.orderP1).toBe('')
     expect(row.status).toBe('')
   })
 

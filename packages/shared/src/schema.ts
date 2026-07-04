@@ -48,23 +48,14 @@ export const persons = sqliteTable('persons', {
 // A person may be a parent in multiple families (one per marriage).
 // orderP1/orderP2 = which marriage number this is for each parent (1 = first, 2 = second…)
 export const families = sqliteTable('families', {
-  id:             text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  parent1Id:      text('parent1_id').references(() => persons.id, { onDelete: 'set null' }),
-  parent2Id:      text('parent2_id').references(() => persons.id, { onDelete: 'set null' }),
-  orderP1:        integer('order_p1').notNull().default(1),
-  orderP2:        integer('order_p2').notNull().default(1),
-  // Marriage date
-  marriedYear:    integer('married_year'),
-  marriedMonth:   integer('married_month'),
-  marriedDay:     integer('married_day'),
-  marriedIsLunar: integer('married_is_lunar', { mode: 'boolean' }).default(false),
-  // End date (divorce or death of partner)
-  endYear:        integer('end_year'),
-  endMonth:       integer('end_month'),
-  endDay:         integer('end_day'),
-  status:         text('status', { enum: ['active', 'divorced', 'widowed'] }).default('active'),
-  notes:          text('notes'),
-  createdAt:      text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  id:        text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  parent1Id: text('parent1_id').references(() => persons.id, { onDelete: 'set null' }),
+  parent2Id: text('parent2_id').references(() => persons.id, { onDelete: 'set null' }),
+  orderP1:   integer('order_p1').notNull().default(1),
+  orderP2:   integer('order_p2').notNull().default(1),
+  status:    text('status', { enum: ['active', 'divorced', 'widowed'] }).default('active'),
+  notes:     text('notes'),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 })
 
 // ─── Family Members ───────────────────────────────────────────────────────────

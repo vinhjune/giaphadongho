@@ -45,12 +45,22 @@ csvRoutes.get('/export/csv', async (c) => {
     .leftJoin(users, eq(users.personId, persons.id))
     .all()
 
-  const [allFamilies] = await Promise.all([
-    db.select().from(families).all(),
-  ])
+  const allFamilies = await db
+    .select({
+      id:       families.id,
+      fatherId: families.parent1Id,
+      motherId: families.parent2Id,
+      orderP1:  families.orderP1,
+      orderP2:  families.orderP2,
+      status:   families.status,
+      notes:    families.notes,
+    })
+    .from(families)
+    .all()
+
   const csv = serializeToUnifiedCsv(
     personRows as Parameters<typeof serializeToUnifiedCsv>[0],
-    allFamilies as Parameters<typeof serializeToUnifiedCsv>[1],
+    allFamilies,
   )
 
   return new Response(csv, {

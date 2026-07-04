@@ -19,20 +19,12 @@ export interface CsvUnifiedRow {
   deathDay: string
   deathIsLunar: string
   isAlive: string      // 'true' | 'false'
-  fatherId: string     // UUID or ''
+  // fatherId/motherId: person rows = parent IDs; family rows = the couple (husband/wife)
+  fatherId: string
   motherId: string
-  // family fields (filled when type=family, empty when type=person)
-  parent1Id: string
-  parent2Id: string
-  orderP1: string      // number
+  // family-only fields (filled when type=family, empty when type=person)
+  orderP1: string      // marriage order for this person within their families (1 = first marriage…)
   orderP2: string
-  marriedYear: string
-  marriedMonth: string
-  marriedDay: string
-  marriedIsLunar: string
-  endYear: string
-  endMonth: string
-  endDay: string
   status: string       // 'active' | 'divorced' | 'widowed' | ''
   notes: string        // shared by both types
   // user-link columns (person rows only; empty for family rows)
@@ -47,17 +39,15 @@ export const UNIFIED_CSV_HEADERS: readonly (keyof CsvUnifiedRow)[] = [
   'birthYear', 'birthMonth', 'birthDay', 'birthIsLunar',
   'deathYear', 'deathMonth', 'deathDay', 'deathIsLunar',
   'isAlive', 'fatherId', 'motherId',
-  // family columns
-  'parent1Id', 'parent2Id', 'orderP1', 'orderP2',
-  'marriedYear', 'marriedMonth', 'marriedDay', 'marriedIsLunar',
-  'endYear', 'endMonth', 'endDay', 'status',
+  // family-only columns
+  'orderP1', 'orderP2', 'status',
   // shared
   'notes',
   // user-link (person rows only)
   'username', 'userRole',
 ] as const
 
-// Legacy sub-types for internal use (used by csv-export/import utilities)
+// Sub-types for csv-export/import utilities
 export type CsvMemberRow = Pick<CsvUnifiedRow,
   'id' | 'name' | 'gender' | 'nickname' | 'bio' | 'address' | 'email' | 'phone' |
   'birthYear' | 'birthMonth' | 'birthDay' | 'birthIsLunar' |
@@ -65,8 +55,7 @@ export type CsvMemberRow = Pick<CsvUnifiedRow,
   'isAlive' | 'notes' | 'fatherId' | 'motherId'
 >
 
+// fatherId/motherId in CsvFamilyRow = the couple (maps to DB parent1Id/parent2Id)
 export type CsvFamilyRow = Pick<CsvUnifiedRow,
-  'id' | 'parent1Id' | 'parent2Id' | 'orderP1' | 'orderP2' |
-  'marriedYear' | 'marriedMonth' | 'marriedDay' | 'marriedIsLunar' |
-  'endYear' | 'endMonth' | 'endDay' | 'status' | 'notes'
+  'id' | 'fatherId' | 'motherId' | 'orderP1' | 'orderP2' | 'status' | 'notes'
 >

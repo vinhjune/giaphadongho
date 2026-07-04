@@ -2,8 +2,8 @@ import { UNIFIED_CSV_HEADERS } from '@giapha/shared/csv-schema'
 import { describe, it, expect } from 'vitest'
 
 describe('CSV schema constants', () => {
-  it('unified headers have 35 columns', () => {
-    expect(UNIFIED_CSV_HEADERS).toHaveLength(35)
+  it('unified headers have 26 columns', () => {
+    expect(UNIFIED_CSV_HEADERS).toHaveLength(26)
   })
   it('first column is type', () => {
     expect(UNIFIED_CSV_HEADERS[0]).toBe('type')
@@ -16,11 +16,16 @@ describe('CSV schema constants', () => {
     expect(UNIFIED_CSV_HEADERS).toContain('isAlive')
   })
   it('includes all family fields', () => {
-    expect(UNIFIED_CSV_HEADERS).toContain('parent1Id')
-    expect(UNIFIED_CSV_HEADERS).toContain('parent2Id')
-    expect(UNIFIED_CSV_HEADERS).toContain('marriedYear')
-    expect(UNIFIED_CSV_HEADERS).toContain('status')
     expect(UNIFIED_CSV_HEADERS).toContain('orderP1')
+    expect(UNIFIED_CSV_HEADERS).toContain('orderP2')
+    expect(UNIFIED_CSV_HEADERS).toContain('status')
+  })
+  it('does not include removed family date or parent columns', () => {
+    expect(UNIFIED_CSV_HEADERS).not.toContain('parent1Id')
+    expect(UNIFIED_CSV_HEADERS).not.toContain('parent2Id')
+    expect(UNIFIED_CSV_HEADERS).not.toContain('marriedYear')
+    expect(UNIFIED_CSV_HEADERS).not.toContain('marriedIsLunar')
+    expect(UNIFIED_CSV_HEADERS).not.toContain('endYear')
   })
   it('does not include avatarKey', () => {
     expect(UNIFIED_CSV_HEADERS).not.toContain('avatarKey')

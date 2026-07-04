@@ -12,9 +12,7 @@ type PersonRow = {
 }
 
 type FamilyRow = {
-  id: string; parent1Id: string | null; parent2Id: string | null; orderP1: number; orderP2: number
-  marriedYear: number | null; marriedMonth: number | null; marriedDay: number | null; marriedIsLunar: boolean
-  endYear: number | null; endMonth: number | null; endDay: number | null
+  id: string; fatherId: string | null; motherId: string | null; orderP1: number; orderP2: number
   status: string | null; notes: string | null
 }
 
@@ -33,10 +31,8 @@ function personToUnifiedRow(p: PersonRow): CsvUnifiedRow {
     deathIsLunar: nullToEmpty(p.deathIsLunar),
     isAlive: nullToEmpty(p.isAlive),
     fatherId: nullToEmpty(p.fatherId), motherId: nullToEmpty(p.motherId),
+    orderP1: '', orderP2: '', status: '',
     notes: nullToEmpty(p.notes),
-    parent1Id: '', parent2Id: '', orderP1: '', orderP2: '',
-    marriedYear: '', marriedMonth: '', marriedDay: '', marriedIsLunar: '',
-    endYear: '', endMonth: '', endDay: '', status: '',
     username: nullToEmpty(p.username), userRole: nullToEmpty(p.userRole),
   }
 }
@@ -47,12 +43,9 @@ function familyToUnifiedRow(f: FamilyRow): CsvUnifiedRow {
     name: '', gender: '', nickname: '', bio: '', address: '', email: '', phone: '',
     birthYear: '', birthMonth: '', birthDay: '', birthIsLunar: '',
     deathYear: '', deathMonth: '', deathDay: '', deathIsLunar: '',
-    isAlive: '', fatherId: '', motherId: '',
-    parent1Id: nullToEmpty(f.parent1Id), parent2Id: nullToEmpty(f.parent2Id),
+    isAlive: '',
+    fatherId: nullToEmpty(f.fatherId), motherId: nullToEmpty(f.motherId),
     orderP1: nullToEmpty(f.orderP1), orderP2: nullToEmpty(f.orderP2),
-    marriedYear: nullToEmpty(f.marriedYear), marriedMonth: nullToEmpty(f.marriedMonth),
-    marriedDay: nullToEmpty(f.marriedDay), marriedIsLunar: nullToEmpty(f.marriedIsLunar),
-    endYear: nullToEmpty(f.endYear), endMonth: nullToEmpty(f.endMonth), endDay: nullToEmpty(f.endDay),
     status: nullToEmpty(f.status),
     notes: nullToEmpty(f.notes),
     username: '', userRole: '',

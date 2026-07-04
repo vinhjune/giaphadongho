@@ -28,7 +28,7 @@ export default function FamilyPanel({ persons }: Props) {
       body: JSON.stringify({}),
     })
     const { id } = (await res.json()) as { id: string }
-    setFamilies(f => [...f, { id, parent1Id: null, parent2Id: null, orderP1: 1, orderP2: 1, marriedYear: null, marriedMonth: null, marriedDay: null, marriedIsLunar: false, endYear: null, endMonth: null, endDay: null, status: null, notes: null, children: [] }])
+    setFamilies(f => [...f, { id, parent1Id: null, parent2Id: null, orderP1: 1, orderP2: 1, status: null, notes: null, children: [] }])
   }
 
   async function setParent(familyId: string, slot: 'parent1Id' | 'parent2Id', personId: string | null) {

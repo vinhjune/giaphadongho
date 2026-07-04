@@ -64,11 +64,8 @@ export function parseUnifiedCsv(csv: string): {
       if (!row.id) errors.push(`Row ${line}: id is required`)
       if (!VALID_STATUSES.has(row.status)) errors.push(`Row ${line}: invalid status "${row.status}"`)
       families.push({
-        id: row.id, parent1Id: row.parent1Id, parent2Id: row.parent2Id,
+        id: row.id, fatherId: row.fatherId, motherId: row.motherId,
         orderP1: row.orderP1, orderP2: row.orderP2,
-        marriedYear: row.marriedYear, marriedMonth: row.marriedMonth,
-        marriedDay: row.marriedDay, marriedIsLunar: row.marriedIsLunar,
-        endYear: row.endYear, endMonth: row.endMonth, endDay: row.endDay,
         status: row.status, notes: row.notes,
       })
     } else {
@@ -91,10 +88,10 @@ export function validateImportData(members: CsvMemberRow[], families: CsvFamilyR
   })
 
   families.forEach(f => {
-    if (f.parent1Id && !personIds.has(f.parent1Id))
-      errors.push(`Family "${f.id}": parent1Id "${f.parent1Id}" không tồn tại`)
-    if (f.parent2Id && !personIds.has(f.parent2Id))
-      errors.push(`Family "${f.id}": parent2Id "${f.parent2Id}" không tồn tại`)
+    if (f.fatherId && !personIds.has(f.fatherId))
+      errors.push(`Family "${f.id}": fatherId "${f.fatherId}" không tồn tại`)
+    if (f.motherId && !personIds.has(f.motherId))
+      errors.push(`Family "${f.id}": motherId "${f.motherId}" không tồn tại`)
   })
 
   return errors
@@ -108,8 +105,8 @@ export function buildFamilyMemberships(
   for (const member of members) {
     if (!member.fatherId && !member.motherId) continue
     const family = families.find(f =>
-      (f.parent1Id || '') === (member.fatherId || '') &&
-      (f.parent2Id || '') === (member.motherId || '')
+      (f.fatherId || '') === (member.fatherId || '') &&
+      (f.motherId || '') === (member.motherId || '')
     )
     if (family) memberships.push({ familyId: family.id, personId: member.id })
   }
@@ -138,11 +135,8 @@ export function coerceMemberRow(r: CsvMemberRow) {
 export function coerceFamilyRow(r: CsvFamilyRow) {
   return {
     id: r.id,
-    parent1Id: toStr(r.parent1Id), parent2Id: toStr(r.parent2Id),
+    parent1Id: toStr(r.fatherId), parent2Id: toStr(r.motherId),
     orderP1: toInt(r.orderP1) ?? 1, orderP2: toInt(r.orderP2) ?? 1,
-    marriedYear: toInt(r.marriedYear), marriedMonth: toInt(r.marriedMonth), marriedDay: toInt(r.marriedDay),
-    marriedIsLunar: toBool(r.marriedIsLunar),
-    endYear: toInt(r.endYear), endMonth: toInt(r.endMonth), endDay: toInt(r.endDay),
     status: toStr(r.status) as 'active' | 'divorced' | 'widowed' | null,
     notes: toStr(r.notes),
   }
