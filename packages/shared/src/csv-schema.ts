@@ -35,6 +35,9 @@ export interface CsvUnifiedRow {
   endDay: string
   status: string       // 'active' | 'divorced' | 'widowed' | ''
   notes: string        // shared by both types
+  // user-link columns (person rows only; empty for family rows)
+  username: string     // linked user account username, or ''
+  userRole: string     // 'editor' | 'viewer' | ''
 }
 
 export const UNIFIED_CSV_HEADERS: readonly (keyof CsvUnifiedRow)[] = [
@@ -50,6 +53,8 @@ export const UNIFIED_CSV_HEADERS: readonly (keyof CsvUnifiedRow)[] = [
   'endYear', 'endMonth', 'endDay', 'status',
   // shared
   'notes',
+  // user-link (person rows only)
+  'username', 'userRole',
 ] as const
 
 // Legacy sub-types for internal use (used by csv-export/import utilities)

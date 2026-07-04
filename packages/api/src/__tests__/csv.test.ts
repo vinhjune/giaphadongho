@@ -2,8 +2,8 @@ import { UNIFIED_CSV_HEADERS } from '@giapha/shared/csv-schema'
 import { describe, it, expect } from 'vitest'
 
 describe('CSV schema constants', () => {
-  it('unified headers have 33 columns', () => {
-    expect(UNIFIED_CSV_HEADERS).toHaveLength(33)
+  it('unified headers have 35 columns', () => {
+    expect(UNIFIED_CSV_HEADERS).toHaveLength(35)
   })
   it('first column is type', () => {
     expect(UNIFIED_CSV_HEADERS[0]).toBe('type')

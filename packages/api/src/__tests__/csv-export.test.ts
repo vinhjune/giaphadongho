@@ -9,6 +9,7 @@ const personWithParents = {
   birthYear: 1990, birthMonth: 3, birthDay: 15, birthIsLunar: false,
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: true, notes: null, fatherId: 'p2', motherId: 'p3',
+  username: null, userRole: null,
 }
 const personNoParents = {
   id: 'p2', name: 'Nguyễn Văn B', gender: 'male', nickname: null,
@@ -16,6 +17,7 @@ const personNoParents = {
   birthYear: 1960, birthMonth: null, birthDay: null, birthIsLunar: false,
   deathYear: 2020, deathMonth: 5, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: 'Ghi chú', fatherId: null, motherId: null,
+  username: null, userRole: null,
 }
 const familyFixture = {
   id: 'f1', parent1Id: 'p2', parent2Id: 'p3', orderP1: 1, orderP2: 1,
@@ -107,5 +109,27 @@ describe('serializeToUnifiedCsv', () => {
     expect(row.name).toBe('')
     expect(row.gender).toBe('')
     expect(row.birthYear).toBe('')
+  })
+
+  it('person with linked user exports username and userRole', () => {
+    const personWithUser = { ...personWithParents, username: 'admin', userRole: 'editor' }
+    const csv = serializeToUnifiedCsv([personWithUser], [])
+    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    expect(row.username).toBe('admin')
+    expect(row.userRole).toBe('editor')
+  })
+
+  it('person without linked user has empty username and userRole', () => {
+    const csv = serializeToUnifiedCsv([personNoParents], [])
+    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    expect(row.username).toBe('')
+    expect(row.userRole).toBe('')
+  })
+
+  it('family row has empty username and userRole', () => {
+    const csv = serializeToUnifiedCsv([], [familyFixture])
+    const row = Papa.parse(csv, { header: true }).data[0] as Record<string, string>
+    expect(row.username).toBe('')
+    expect(row.userRole).toBe('')
   })
 })

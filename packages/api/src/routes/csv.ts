@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import { persons, families, familyMembers } from '@giapha/shared/schema'
+import { persons, families, familyMembers, users } from '@giapha/shared/schema'
 import { requireEditor } from '../middleware/require-auth'
 import { serializeToUnifiedCsv } from '../utils/csv-export'
 import { parseUnifiedCsv, validateImportData, buildFamilyMemberships, coerceMemberRow, coerceFamilyRow } from '../utils/csv-import'
@@ -36,10 +36,13 @@ csvRoutes.get('/export/csv', async (c) => {
       notes:        persons.notes,
       fatherId:     families.parent1Id,
       motherId:     families.parent2Id,
+      username:     users.username,
+      userRole:     users.role,
     })
     .from(persons)
     .leftJoin(familyMembers, eq(familyMembers.personId, persons.id))
     .leftJoin(families, eq(families.id, familyMembers.familyId))
+    .leftJoin(users, eq(users.personId, persons.id))
     .all()
 
   const [allFamilies] = await Promise.all([
@@ -64,7 +67,7 @@ csvRoutes.post('/import/csv', async (c) => {
   if (!file) return c.json({ errors: ['No file uploaded'] }, 400)
 
   const csvText = await file.text()
-  const { members: memberRows, families: familyRows, errors: parseErrors } = parseUnifiedCsv(csvText)
+  const { members: memberRows, families: familyRows, userLinks, errors: parseErrors } = parseUnifiedCsv(csvText)
   if (parseErrors.length) return c.json({ errors: parseErrors }, 400)
 
   const crossErrors = validateImportData(memberRows, familyRows)
@@ -125,6 +128,28 @@ csvRoutes.post('/import/csv', async (c) => {
   await runBatches(chunk(uniqueFamilyValues, 7).map(rows => [db.insert(families).values(rows)]))
   if (memberships.length > 0) {
     await runBatches(chunk(memberships, 45).map(rows => [db.insert(familyMembers).values(rows)]))
+  }
+
+  // Restore user↔person links from CSV, then null out any dangling refs not covered.
+  const newPersonIds = new Set(uniquePersonValues.map(p => p.id))
+
+  if (userLinks.length > 0) {
+    for (const link of userLinks) {
+      // Only restore the link if the person actually exists in the newly imported set.
+      const resolvedPersonId = newPersonIds.has(link.personId) ? link.personId : null
+      await db.update(users)
+        .set({ personId: resolvedPersonId, role: link.userRole as 'editor' | 'viewer' })
+        .where(eq(users.username, link.username))
+    }
+  }
+
+  // Clear dangling personId refs for users not addressed by userLinks in this CSV.
+  const linkedUsernames = new Set(userLinks.map(l => l.username))
+  const allUsers = await db.select({ username: users.username, personId: users.personId }).from(users).all()
+  for (const u of allUsers) {
+    if (!linkedUsernames.has(u.username) && u.personId && !newPersonIds.has(u.personId)) {
+      await db.update(users).set({ personId: null }).where(eq(users.username, u.username))
+    }
   }
 
   return c.json({ imported: { persons: uniquePersonValues.length, families: uniqueFamilyValues.length } })

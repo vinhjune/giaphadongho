@@ -7,25 +7,33 @@ const VALID_STATUSES = new Set(['active', 'divorced', 'widowed', ''])
 
 function isNumericOrEmpty(v: string) { return v === '' || /^\d+$/.test(v) }
 
+export type CsvUserLink = { personId: string; username: string; userRole: string }
+
 export function parseUnifiedCsv(csv: string): {
   members: CsvMemberRow[]
   families: CsvFamilyRow[]
+  userLinks: CsvUserLink[]
   errors: string[]
 } {
   const result = Papa.parse<CsvUnifiedRow>(csv, { header: true, skipEmptyLines: true })
   const errors: string[] = []
 
   if (!result.meta.fields?.includes('type')) {
-    return { members: [], families: [], errors: ['Missing required column: type'] }
+    return { members: [], families: [], userLinks: [], errors: ['Missing required column: type'] }
   }
 
-  const missingCols = UNIFIED_CSV_HEADERS.filter(h => !result.meta.fields?.includes(h))
+  // Allow CSVs without the user-link columns (backward-compatible).
+  const coreHeaders = UNIFIED_CSV_HEADERS.filter(h => h !== 'username' && h !== 'userRole')
+  const missingCols = coreHeaders.filter(h => !result.meta.fields?.includes(h))
   if (missingCols.length) {
-    return { members: [], families: [], errors: [`Missing columns: ${missingCols.join(', ')}`] }
+    return { members: [], families: [], userLinks: [], errors: [`Missing columns: ${missingCols.join(', ')}`] }
   }
+
+  const hasUserCols = result.meta.fields?.includes('username') && result.meta.fields?.includes('userRole')
 
   const members: CsvMemberRow[] = []
   const families: CsvFamilyRow[] = []
+  const userLinks: CsvUserLink[] = []
 
   result.data.forEach((row, i) => {
     const line = i + 2
@@ -49,6 +57,9 @@ export function parseUnifiedCsv(csv: string): {
         isAlive: row.isAlive, notes: row.notes,
         fatherId: row.fatherId, motherId: row.motherId,
       })
+      if (hasUserCols && row.username) {
+        userLinks.push({ personId: row.id, username: row.username, userRole: row.userRole || 'viewer' })
+      }
     } else if (row.type === 'family') {
       if (!row.id) errors.push(`Row ${line}: id is required`)
       if (!VALID_STATUSES.has(row.status)) errors.push(`Row ${line}: invalid status "${row.status}"`)
@@ -65,7 +76,7 @@ export function parseUnifiedCsv(csv: string): {
     }
   })
 
-  return { members, families, errors }
+  return { members, families, userLinks, errors }
 }
 
 export function validateImportData(members: CsvMemberRow[], families: CsvFamilyRow[]): string[] {

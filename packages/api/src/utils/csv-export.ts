@@ -8,6 +8,7 @@ type PersonRow = {
   birthYear: number | null; birthMonth: number | null; birthDay: number | null; birthIsLunar: boolean
   deathYear: number | null; deathMonth: number | null; deathDay: number | null; deathIsLunar: boolean
   isAlive: boolean; notes: string | null; fatherId: string | null; motherId: string | null
+  username: string | null; userRole: string | null
 }
 
 type FamilyRow = {
@@ -36,6 +37,7 @@ function personToUnifiedRow(p: PersonRow): CsvUnifiedRow {
     parent1Id: '', parent2Id: '', orderP1: '', orderP2: '',
     marriedYear: '', marriedMonth: '', marriedDay: '', marriedIsLunar: '',
     endYear: '', endMonth: '', endDay: '', status: '',
+    username: nullToEmpty(p.username), userRole: nullToEmpty(p.userRole),
   }
 }
 
@@ -53,6 +55,7 @@ function familyToUnifiedRow(f: FamilyRow): CsvUnifiedRow {
     endYear: nullToEmpty(f.endYear), endMonth: nullToEmpty(f.endMonth), endDay: nullToEmpty(f.endDay),
     status: nullToEmpty(f.status),
     notes: nullToEmpty(f.notes),
+    username: '', userRole: '',
   }
 }
 

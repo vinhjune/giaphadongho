@@ -13,6 +13,7 @@ const personA = {
   birthYear: 1950, birthMonth: null, birthDay: null, birthIsLunar: false,
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: null, fatherId: null, motherId: null,
+  username: null, userRole: null,
 }
 const personB = {
   id: 'p2', name: 'Trần Thị B', gender: 'female' as const, nickname: null,
@@ -20,6 +21,7 @@ const personB = {
   birthYear: 1955, birthMonth: null, birthDay: null, birthIsLunar: false,
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: null, fatherId: null, motherId: null,
+  username: null, userRole: null,
 }
 const personChild = {
   id: 'p3', name: 'Nguyễn Văn Con', gender: 'male' as const, nickname: null,
@@ -27,6 +29,7 @@ const personChild = {
   birthYear: 1980, birthMonth: null, birthDay: null, birthIsLunar: false,
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: true, notes: null, fatherId: 'p1', motherId: 'p2',
+  username: null, userRole: null,
 }
 const familyAB = {
   id: 'f1', parent1Id: 'p1', parent2Id: 'p2', orderP1: 1, orderP2: 1,
@@ -103,6 +106,35 @@ describe('parseUnifiedCsv', () => {
     const csv = makeValidCsv().replace(/^(person,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,)(\d+)/m, '$1abc')
     const result = parseUnifiedCsv(csv)
     expect(result.errors.some(e => /birthYear/i.test(e))).toBe(true)
+  })
+})
+
+describe('parseUnifiedCsv — userLinks', () => {
+  it('returns empty userLinks when no person has a username', () => {
+    const { userLinks } = parseUnifiedCsv(makeValidCsv())
+    expect(userLinks).toHaveLength(0)
+  })
+
+  it('extracts userLink when person has non-empty username', () => {
+    const withUser = { ...personA, username: 'admin', userRole: 'editor' }
+    const csv = serializeToUnifiedCsv([withUser, personB, personChild], [familyAB])
+    const { userLinks } = parseUnifiedCsv(csv)
+    expect(userLinks).toHaveLength(1)
+    expect(userLinks[0]).toEqual({ personId: 'p1', username: 'admin', userRole: 'editor' })
+  })
+
+  it('defaults userRole to viewer when empty in CSV', () => {
+    const withUser = { ...personA, username: 'viewer1', userRole: null }
+    const csv = serializeToUnifiedCsv([withUser], [])
+    const { userLinks } = parseUnifiedCsv(csv)
+    expect(userLinks[0].userRole).toBe('viewer')
+  })
+
+  it('parses without userLinks for old CSVs lacking the columns', () => {
+    const csv = makeValidCsv().replace(/,username,userRole/, '').replace(/,,$/gm, '')
+    const result = parseUnifiedCsv(csv)
+    expect(result.errors).toHaveLength(0)
+    expect(result.userLinks).toHaveLength(0)
   })
 })
 
