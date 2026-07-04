@@ -36,6 +36,8 @@ Gia Phả Dòng Họ ("Family Genealogy") is a self-hosted Vietnamese family gen
 - Upload and manage member avatars (stored in R2)
 - Manage family events with lunar calendar support
 - Edit landing page content (family name, intro, founded year)
+- Export all genealogy data (persons + families) as unified CSV file
+- Import CSV file to bulk-create or update members and families atomically
 
 ## Technical Constraints
 
@@ -51,7 +53,7 @@ Gia Phả Dòng Họ ("Family Genealogy") is a self-hosted Vietnamese family gen
 - Email notifications
 - Multi-family / multi-tenant support
 - Mobile app (web-only)
-- Genealogy file import/export (GEDCOM, etc.)
+- GEDCOM or proprietary genealogy format import/export (CSV format is implemented; cross-tool interop not prioritized)
 
 ## Stack Decision Rationale
 

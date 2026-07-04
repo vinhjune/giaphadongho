@@ -19,7 +19,11 @@ giaphadongho/
 │   │   │   │   ├── public.ts       GET /api/public/landing
 │   │   │   │   ├── persons.ts      GET persons list + graph data + single
 │   │   │   │   ├── editor.ts       Full CRUD — persons, families, avatars
+│   │   │   │   ├── csv.ts          GET /export/csv, POST /import/csv
 │   │   │   │   └── content.ts      GET/PUT landing page settings
+│   │   │   ├── utils/
+│   │   │   │   ├── csv-export.ts   Unified CSV serialization
+│   │   │   │   └── csv-import.ts   Unified CSV parsing + validation
 │   │   │   └── db/
 │   │   │       ├── create-user.ts  CLI script — generate INSERT SQL for new users
 │   │   │       └── seed.sql        Sample seed data
@@ -45,10 +49,11 @@ giaphadongho/
 │   │   │   │   │   ├── PersonNode.tsx  React Flow node for a person
 │   │   │   │   │   └── FamilyNode.tsx  React Flow node for a couple/family
 │   │   │   │   ├── editor/
-│   │   │   │   │   ├── PersonForm.tsx      Full person create/edit form
-│   │   │   │   │   ├── FamilyPanel.tsx     Family create/edit + child assignment
-│   │   │   │   │   ├── EventsManager.tsx   Event CRUD (giỗ chạp, etc.)
-│   │   │   │   │   └── AvatarUpload.tsx    File picker + multipart POST to R2
+│   │   │   │   │   ├── PersonForm.tsx              Full person create/edit form
+│   │   │   │   │   ├── FamilyPanel.tsx             Family create/edit + child assignment
+│   │   │   │   │   ├── EventsManager.tsx           Event CRUD (giỗ chạp, etc.)
+│   │   │   │   │   ├── AvatarUpload.tsx            File picker + multipart POST to R2
+│   │   │   │   │   └── ExportImportToolbar.tsx     CSV export/import buttons + state
 │   │   │   │   ├── landing/
 │   │   │   │   │   ├── FamilyHero.tsx      Hero banner with family name + intro
 │   │   │   │   │   ├── EventList.tsx       Upcoming events section
@@ -59,7 +64,8 @@ giaphadongho/
 │   │   │   │   ├── ProtectedRoute.tsx      Role-gated route wrapper
 │   │   │   │   └── ErrorBoundary.tsx       React error boundary
 │   │   │   └── lib/
-│   │   │       └── genealogy-layout.ts     Dagre auto-layout for tree graph
+│   │   │       ├── genealogy-layout.ts     Dagre auto-layout for tree graph
+│   │   │       └── csv-client.ts           CSV download/upload fetch helpers
 │   │   ├── vite.config.ts          Vite config + /api proxy to :8787
 │   │   └── tailwind.config.js
 │   │
@@ -67,6 +73,7 @@ giaphadongho/
 │       └── src/
 │           ├── schema.ts           Drizzle table definitions (users, persons, families, events, settings)
 │           ├── types.ts            PersonPublic, PersonFull, Family, FamilyEvent, LandingData, GraphNode
+│           ├── csv-schema.ts       CsvUnifiedRow, UNIFIED_CSV_HEADERS, validation types
 │           ├── date-utils.ts       Lunar ↔ Gregorian helpers
 │           └── index.ts            Re-exports
 │
@@ -86,6 +93,7 @@ giaphadongho/
 | `drizzle-orm` | Type-safe SQLite query builder for D1 |
 | `jose` | JWT sign/verify using Web Crypto API |
 | `zod` | Runtime input validation |
+| `papaparse` | CSV parsing + serialization |
 | `@cloudflare/workers-types` | TypeScript types for Workers bindings |
 | `drizzle-kit` | Schema migration generator |
 | `wrangler` | Local dev server + deploy CLI |

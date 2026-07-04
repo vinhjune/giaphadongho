@@ -64,6 +64,8 @@ Browser
 | DELETE | `/api/editor/families/:id` | editor | Delete family |
 | POST | `/api/editor/families/:fid/members/:pid` | editor | Add child to family |
 | DELETE | `/api/editor/families/:fid/members/:pid` | editor | Remove child from family |
+| GET | `/api/editor/export/csv` | editor | Export all persons + families as unified 33-column CSV |
+| POST | `/api/editor/import/csv` | editor | Import CSV (multipart `file` field) to upsert persons + families atomically |
 | GET | `/api/avatars/:key` | none | Serve R2 avatar (public) |
 
 *Guest receives `PersonPublic` (no contact/death info); authenticated users receive `PersonFull`.

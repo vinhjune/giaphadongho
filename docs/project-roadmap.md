@@ -12,6 +12,7 @@
 | 6 | Editor — member management with AG Grid | Done |
 | 7 | Landing page content editor | Done |
 | 8 | Security hardening — headers, rate limiting, input validation, error boundary | Done |
+| 9 | CSV export/import — unified 33-column format, atomic batch operations | Done |
 
 ## Potential Next Steps
 
@@ -28,7 +29,6 @@ The items below are not committed — they represent commonly requested enhancem
 
 - **Multiple admin accounts with invite flow** — currently users are created by manual SQL; a simple invite-by-email flow would help non-technical admins
 - **Endogamy warnings** — the graph data endpoint already detects endogamy (`hasEndogamy`); surface this in the UI
-- **Bulk import** — CSV import for large families migrating from spreadsheets
 - **Audit log** — record who created or edited each person/family entry
 
 ### Long-term
