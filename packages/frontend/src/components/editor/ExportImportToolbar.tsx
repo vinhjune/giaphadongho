@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { downloadCsv, uploadCsvZip } from '../../utils/csv-client'
 
-type Props = { onImportSuccess?: () => void }
+type Props = { token: string; onImportSuccess?: () => void }
 
-export default function ExportImportToolbar({ onImportSuccess }: Props) {
+export default function ExportImportToolbar({ token, onImportSuccess }: Props) {
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
@@ -15,7 +15,7 @@ export default function ExportImportToolbar({ onImportSuccess }: Props) {
     setExporting(true)
     setExportError(null)
     try {
-      await downloadCsv()
+      await downloadCsv(token)
     } catch {
       setExportError('Export thất bại. Vui lòng thử lại.')
     } finally {
@@ -30,7 +30,7 @@ export default function ExportImportToolbar({ onImportSuccess }: Props) {
     setImportResult(null)
     setImportErrors([])
     try {
-      const result = await uploadCsvZip(file)
+      const result = await uploadCsvZip(file, token)
       setImportResult(result.imported)
       onImportSuccess?.()
     } catch (err: unknown) {

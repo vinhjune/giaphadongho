@@ -340,7 +340,7 @@ export default function PersonsTable() {
         )}
 
         <div className="ml-auto">
-          <ExportImportToolbar onImportSuccess={loadPersons} />
+          <ExportImportToolbar token={token ?? ''} onImportSuccess={loadPersons} />
         </div>
       </div>
 
