@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq, sql, inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { persons, families, familyMembers } from '@giapha/shared/schema'
 import { requireEditor } from '../middleware/require-auth'
 import { serializeToUnifiedCsv } from '../utils/csv-export'
@@ -70,26 +70,35 @@ csvRoutes.post('/import/csv', async (c) => {
   const crossErrors = validateImportData(memberRows, familyRows)
   if (crossErrors.length) return c.json({ errors: crossErrors }, 400)
 
-  const rawMemberships = buildFamilyMemberships(memberRows, familyRows)
   const db = drizzle(c.env.giapha_db)
-
-  // Deduplicate by personId (CSV may contain duplicate person rows; last upsert wins,
-  // but family_members has a unique constraint on person_id so we must deduplicate).
-  const seenPersonIds = new Set<string>()
-  const memberships = rawMemberships.filter(m => {
-    if (seenPersonIds.has(m.personId)) return false
-    seenPersonIds.add(m.personId)
-    return true
-  })
 
   const personValues = memberRows.map(coerceMemberRow)
   const familyValues = familyRows.map(coerceFamilyRow)
-  const importedPersonIds = [...new Set(personValues.map(p => p.id))]
+
+  // Deduplicate persons/families in case CSV has duplicate IDs.
+  const seenPersonIds = new Set<string>()
+  const uniquePersonValues = personValues.filter(p => {
+    if (seenPersonIds.has(p.id)) return false
+    seenPersonIds.add(p.id)
+    return true
+  })
+  const seenFamilyIds = new Set<string>()
+  const uniqueFamilyValues = familyValues.filter(f => {
+    if (seenFamilyIds.has(f.id)) return false
+    seenFamilyIds.add(f.id)
+    return true
+  })
+
+  const rawMemberships = buildFamilyMemberships(memberRows, familyRows)
+  const seenMemberPersonIds = new Set<string>()
+  const memberships = rawMemberships.filter(m => {
+    if (seenMemberPersonIds.has(m.personId)) return false
+    seenMemberPersonIds.add(m.personId)
+    return true
+  })
 
   // D1 local SQLite enforces a per-statement limit of 100 bound parameters.
-  // Person/family upserts are one statement per row (18 or 14 params each → OK).
-  // The DELETE IN clause and multi-row membership INSERT must stay ≤ 90 params
-  // per statement (90 IDs for DELETE, 45 rows × 2 cols for membership INSERT).
+  // Multi-row INSERT chunks: persons 5×18=90, families 7×14=98, memberships 45×2=90.
   function chunk<T>(arr: T[], size: number): T[][] {
     const result: T[][] = []
     for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size))
@@ -105,72 +114,20 @@ csvRoutes.post('/import/csv', async (c) => {
     }
   }
 
-  const personSet = personValues.map(p =>
-    db.insert(persons).values(p).onConflictDoUpdate({
-      target: persons.id,
-      set: {
-        name:         sql`excluded.name`,
-        gender:       sql`excluded.gender`,
-        nickname:     sql`excluded.nickname`,
-        bio:          sql`excluded.bio`,
-        address:      sql`excluded.address`,
-        email:        sql`excluded.email`,
-        phone:        sql`excluded.phone`,
-        birthYear:    sql`excluded.birth_year`,
-        birthMonth:   sql`excluded.birth_month`,
-        birthDay:     sql`excluded.birth_day`,
-        birthIsLunar: sql`excluded.birth_is_lunar`,
-        deathYear:    sql`excluded.death_year`,
-        deathMonth:   sql`excluded.death_month`,
-        deathDay:     sql`excluded.death_day`,
-        deathIsLunar: sql`excluded.death_is_lunar`,
-        isAlive:      sql`excluded.is_alive`,
-        notes:        sql`excluded.notes`,
-      },
-    })
-  )
-  const familySet = familyValues.map(f =>
-    db.insert(families).values(f).onConflictDoUpdate({
-      target: families.id,
-      set: {
-        parent1Id:      sql`excluded.parent1_id`,
-        parent2Id:      sql`excluded.parent2_id`,
-        orderP1:        sql`excluded.order_p1`,
-        orderP2:        sql`excluded.order_p2`,
-        marriedYear:    sql`excluded.married_year`,
-        marriedMonth:   sql`excluded.married_month`,
-        marriedDay:     sql`excluded.married_day`,
-        marriedIsLunar: sql`excluded.married_is_lunar`,
-        endYear:        sql`excluded.end_year`,
-        endMonth:       sql`excluded.end_month`,
-        endDay:         sql`excluded.end_day`,
-        status:         sql`excluded.status`,
-        notes:          sql`excluded.notes`,
-      },
-    })
-  )
+  // Full replace: wipe existing data then insert fresh from CSV.
+  await db.batch([
+    db.delete(familyMembers),
+    db.delete(families),
+    db.delete(persons),
+  ])
 
-  // Step 1: clear old family memberships for imported persons (chunked IN clause)
-  if (importedPersonIds.length > 0) {
-    await runBatches(
-      chunk(importedPersonIds, 90).map(ids => [
-        db.delete(familyMembers).where(inArray(familyMembers.personId, ids)),
-      ])
-    )
-  }
-
-  // Step 2: upsert persons, then families (15 statements per batch)
-  await runBatches(chunk(personSet, 15))
-  await runBatches(chunk(familySet, 15))
-
-  // Step 3: insert new family memberships; 45 rows × 2 cols = 90 params per statement
+  await runBatches(chunk(uniquePersonValues, 5).map(rows => [db.insert(persons).values(rows)]))
+  await runBatches(chunk(uniqueFamilyValues, 7).map(rows => [db.insert(families).values(rows)]))
   if (memberships.length > 0) {
-    await runBatches(
-      chunk(memberships, 45).map(rows => [db.insert(familyMembers).values(rows)])
-    )
+    await runBatches(chunk(memberships, 45).map(rows => [db.insert(familyMembers).values(rows)]))
   }
 
-  return c.json({ imported: { persons: personValues.length, families: familyValues.length } })
+  return c.json({ imported: { persons: uniquePersonValues.length, families: uniqueFamilyValues.length } })
 })
 
 export default csvRoutes
