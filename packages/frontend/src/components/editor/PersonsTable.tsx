@@ -34,6 +34,20 @@ function formatBirthDate(row: RowState | undefined): string {
   return parts.join('/') + (birthIsLunar ? ' (ÂL)' : '')
 }
 
+function formatDeathDate(row: RowState | undefined): string {
+  if (!row) return '—'
+  if (row.isAlive) return '—'
+  const { deathDay, deathMonth, deathYear, deathIsLunar } = row
+  if (!deathYear && !deathMonth && !deathDay) return '—'
+  const parts: string[] = []
+  if (deathDay) parts.push(String(deathDay))
+  if (deathMonth) {
+    parts.push(deathIsLunar ? (LUNAR_MONTH_NAMES[deathMonth - 1] ?? String(deathMonth)) : String(deathMonth))
+  }
+  if (deathYear) parts.push(String(deathYear))
+  return parts.join('/') + (deathIsLunar ? ' (ÂL)' : '')
+}
+
 export default function PersonsTable() {
   const { token } = useAuth()
   const [rows, setRows]       = useState<RowState[]>([])
@@ -109,12 +123,22 @@ export default function PersonsTable() {
       cellRenderer: 'agCheckboxCellRenderer',
     },
     {
+      field: 'deathYear',
+      headerName: 'Ngày mất',
+      width: 150,
+      editable: true,
+      cellEditor: 'agNumberCellEditor',
+      valueFormatter: p => formatDeathDate(p.data),
+    },
+    {
       field: 'fatherId',
       headerName: 'Bố',
       flex: 1,
       editable: true,
       cellEditor: ParentCellEditor,
       cellEditorPopup: true,
+      // Prevent AG Grid from intercepting keys used by the dropdown
+      suppressKeyboardEvent: p => p.editing && ['Enter', 'ArrowDown', 'ArrowUp', 'Escape'].includes(p.event.key),
       cellEditorParams: (p: { data: RowState }) => ({
         persons: visibleRows,
         selfId: p.data?.id ?? null,
@@ -128,6 +152,7 @@ export default function PersonsTable() {
       editable: true,
       cellEditor: ParentCellEditor,
       cellEditorPopup: true,
+      suppressKeyboardEvent: p => p.editing && ['Enter', 'ArrowDown', 'ArrowUp', 'Escape'].includes(p.event.key),
       cellEditorParams: (p: { data: RowState }) => ({
         persons: visibleRows,
         selfId: p.data?.id ?? null,
