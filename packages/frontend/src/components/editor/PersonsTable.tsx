@@ -9,6 +9,7 @@ import type {
 } from 'ag-grid-community'
 import { useAuth } from '../../contexts/AuthContext'
 import ParentCellEditor from './ParentCellEditor'
+import ExportImportToolbar from './ExportImportToolbar'
 import type { PersonWithParents } from '@giapha/shared/types'
 
 type RowState = PersonWithParents & {
@@ -337,6 +338,10 @@ export default function PersonsTable() {
         {saveError && (
           <span className="text-xs text-red-600">{saveError}</span>
         )}
+
+        <div className="ml-auto">
+          <ExportImportToolbar onImportSuccess={loadPersons} />
+        </div>
       </div>
 
       {/* Grid */}
