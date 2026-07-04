@@ -4,6 +4,7 @@ import '@xyflow/react/dist/style.css'
 import AppNav from '../components/layout/AppNav'
 import PersonNode from '../components/tree/PersonNode'
 import FamilyNode from '../components/tree/FamilyNode'
+import PersonDetailModal from '../components/PersonDetailModal'
 import { applyDagreLayout } from '../lib/genealogy-layout'
 import type { PersonPublic } from '@giapha/shared/types'
 
@@ -18,6 +19,7 @@ const nodeTypes = { person: PersonNode, family: FamilyNode }
 export default function TreePage() {
   const [graph, setGraph] = useState<GraphResponse | null>(null)
   const [error, setError]   = useState(false)
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/persons/graph/data')
@@ -62,12 +64,16 @@ export default function TreePage() {
           fitView
           minZoom={0.1}
           proOptions={{ hideAttribution: false }}
+          onNodeDoubleClick={(_event, node) => {
+            if (node.type === 'person') setSelectedPersonId(node.id)
+          }}
         >
           <Background />
           <Controls />
           <MiniMap />
         </ReactFlow>
       </div>
+      <PersonDetailModal personId={selectedPersonId} onClose={() => setSelectedPersonId(null)} />
     </div>
   )
 }

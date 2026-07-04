@@ -1,13 +1,17 @@
 import { useEffect, useState, useMemo } from 'react'
 import AppNav from '../components/layout/AppNav'
 import PersonSearch from '../components/PersonSearch'
+import PersonDetailModal from '../components/PersonDetailModal'
 import type { PersonPublic } from '@giapha/shared/types'
 
-function PersonRow({ person }: { person: PersonPublic }) {
+function PersonRow({ person, onDoubleClick }: { person: PersonPublic; onDoubleClick: () => void }) {
   const initials = person.name.split(' ').slice(-2).map(s => s[0]).join('').toUpperCase()
 
   return (
-    <div className="flex items-center gap-3 bg-white rounded-xl border border-stone-200 px-4 py-3 hover:shadow-sm transition-shadow">
+    <div
+      className="flex items-center gap-3 bg-white rounded-xl border border-stone-200 px-4 py-3 hover:shadow-sm transition-shadow cursor-pointer"
+      onDoubleClick={onDoubleClick}
+    >
       {person.avatarUrl ? (
         <img src={person.avatarUrl} alt={person.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
       ) : (
@@ -36,6 +40,7 @@ export default function ListPage() {
   const [persons, setPersons] = useState<PersonPublic[]>([])
   const [query, setQuery]     = useState('')
   const [error, setError]     = useState(false)
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/persons')
@@ -68,13 +73,14 @@ export default function ListPage() {
           <p className="text-center text-stone-500 py-12">Không thể tải danh sách.</p>
         ) : (
           <div className="space-y-2">
-            {filtered.map(p => <PersonRow key={p.id} person={p} />)}
+            {filtered.map(p => <PersonRow key={p.id} person={p} onDoubleClick={() => setSelectedPersonId(p.id)} />)}
             {filtered.length === 0 && (
               <p className="text-center text-stone-400 py-12">Không tìm thấy kết quả.</p>
             )}
           </div>
         )}
       </main>
+      <PersonDetailModal personId={selectedPersonId} onClose={() => setSelectedPersonId(null)} />
     </div>
   )
 }
