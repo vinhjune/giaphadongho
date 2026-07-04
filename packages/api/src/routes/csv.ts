@@ -77,49 +77,54 @@ csvRoutes.post('/import/csv', async (c) => {
   const familyValues = familyRows.map(coerceFamilyRow)
   const importedPersonIds = personValues.map(p => p.id)
 
-  // Atomic import via D1 batch: upsert persons → upsert families → rebuild memberships
+  // D1 local SQLite has a low bound-parameter limit per statement, so we upsert
+  // one row at a time. Each individual statement stays well within the limit.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const statements: any[] = [
-    db.insert(persons).values(personValues).onConflictDoUpdate({
-      target: persons.id,
-      set: {
-        name:         sql`excluded.name`,
-        gender:       sql`excluded.gender`,
-        nickname:     sql`excluded.nickname`,
-        bio:          sql`excluded.bio`,
-        address:      sql`excluded.address`,
-        email:        sql`excluded.email`,
-        phone:        sql`excluded.phone`,
-        birthYear:    sql`excluded.birth_year`,
-        birthMonth:   sql`excluded.birth_month`,
-        birthDay:     sql`excluded.birth_day`,
-        birthIsLunar: sql`excluded.birth_is_lunar`,
-        deathYear:    sql`excluded.death_year`,
-        deathMonth:   sql`excluded.death_month`,
-        deathDay:     sql`excluded.death_day`,
-        deathIsLunar: sql`excluded.death_is_lunar`,
-        isAlive:      sql`excluded.is_alive`,
-        notes:        sql`excluded.notes`,
-      },
-    }),
-    db.insert(families).values(familyValues).onConflictDoUpdate({
-      target: families.id,
-      set: {
-        parent1Id:      sql`excluded.parent1_id`,
-        parent2Id:      sql`excluded.parent2_id`,
-        orderP1:        sql`excluded.order_p1`,
-        orderP2:        sql`excluded.order_p2`,
-        marriedYear:    sql`excluded.married_year`,
-        marriedMonth:   sql`excluded.married_month`,
-        marriedDay:     sql`excluded.married_day`,
-        marriedIsLunar: sql`excluded.married_is_lunar`,
-        endYear:        sql`excluded.end_year`,
-        endMonth:       sql`excluded.end_month`,
-        endDay:         sql`excluded.end_day`,
-        status:         sql`excluded.status`,
-        notes:          sql`excluded.notes`,
-      },
-    }),
+    ...personValues.map(p =>
+      db.insert(persons).values(p).onConflictDoUpdate({
+        target: persons.id,
+        set: {
+          name:         sql`excluded.name`,
+          gender:       sql`excluded.gender`,
+          nickname:     sql`excluded.nickname`,
+          bio:          sql`excluded.bio`,
+          address:      sql`excluded.address`,
+          email:        sql`excluded.email`,
+          phone:        sql`excluded.phone`,
+          birthYear:    sql`excluded.birth_year`,
+          birthMonth:   sql`excluded.birth_month`,
+          birthDay:     sql`excluded.birth_day`,
+          birthIsLunar: sql`excluded.birth_is_lunar`,
+          deathYear:    sql`excluded.death_year`,
+          deathMonth:   sql`excluded.death_month`,
+          deathDay:     sql`excluded.death_day`,
+          deathIsLunar: sql`excluded.death_is_lunar`,
+          isAlive:      sql`excluded.is_alive`,
+          notes:        sql`excluded.notes`,
+        },
+      })
+    ),
+    ...familyValues.map(f =>
+      db.insert(families).values(f).onConflictDoUpdate({
+        target: families.id,
+        set: {
+          parent1Id:      sql`excluded.parent1_id`,
+          parent2Id:      sql`excluded.parent2_id`,
+          orderP1:        sql`excluded.order_p1`,
+          orderP2:        sql`excluded.order_p2`,
+          marriedYear:    sql`excluded.married_year`,
+          marriedMonth:   sql`excluded.married_month`,
+          marriedDay:     sql`excluded.married_day`,
+          marriedIsLunar: sql`excluded.married_is_lunar`,
+          endYear:        sql`excluded.end_year`,
+          endMonth:       sql`excluded.end_month`,
+          endDay:         sql`excluded.end_day`,
+          status:         sql`excluded.status`,
+          notes:          sql`excluded.notes`,
+        },
+      })
+    ),
   ]
 
   if (importedPersonIds.length > 0) {
