@@ -9,7 +9,6 @@
   "dependencies": {
     "@giapha/shared": "*",
     "drizzle-orm": "^0.38.0",
-    "fflate": "^0.8.2",
     "hono": "^4.0.0",
     "jose": "^6.2.3",
     "papaparse": "^5.4.1",

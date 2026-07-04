@@ -1,31 +1,30 @@
-export interface CsvMemberRow {
+// Unified CSV row — one file, two row types: "person" and "family"
+export interface CsvUnifiedRow {
+  type: string         // 'person' | 'family'
   id: string
+  // person fields (filled when type=person, empty when type=family)
   name: string
-  gender: string        // 'male' | 'female' | 'other' | ''
+  gender: string       // 'male' | 'female' | 'other' | ''
   nickname: string
   bio: string
   address: string
   email: string
   phone: string
-  birthYear: string     // number or ''
+  birthYear: string    // number or ''
   birthMonth: string
   birthDay: string
-  birthIsLunar: string  // 'true' | 'false'
+  birthIsLunar: string // 'true' | 'false'
   deathYear: string
   deathMonth: string
   deathDay: string
   deathIsLunar: string
-  isAlive: string       // 'true' | 'false'
-  notes: string
-  fatherId: string      // UUID or ''
+  isAlive: string      // 'true' | 'false'
+  fatherId: string     // UUID or ''
   motherId: string
-}
-
-export interface CsvFamilyRow {
-  id: string
+  // family fields (filled when type=family, empty when type=person)
   parent1Id: string
   parent2Id: string
-  orderP1: string       // number
+  orderP1: string      // number
   orderP2: string
   marriedYear: string
   marriedMonth: string
@@ -34,19 +33,35 @@ export interface CsvFamilyRow {
   endYear: string
   endMonth: string
   endDay: string
-  status: string        // 'active' | 'divorced' | 'widowed' | ''
-  notes: string
+  status: string       // 'active' | 'divorced' | 'widowed' | ''
+  notes: string        // shared by both types
 }
 
-export const MEMBER_CSV_HEADERS: readonly (keyof CsvMemberRow)[] = [
-  'id', 'name', 'gender', 'nickname', 'bio', 'address', 'email', 'phone',
+export const UNIFIED_CSV_HEADERS: readonly (keyof CsvUnifiedRow)[] = [
+  'type', 'id',
+  // person columns
+  'name', 'gender', 'nickname', 'bio', 'address', 'email', 'phone',
   'birthYear', 'birthMonth', 'birthDay', 'birthIsLunar',
   'deathYear', 'deathMonth', 'deathDay', 'deathIsLunar',
-  'isAlive', 'notes', 'fatherId', 'motherId',
+  'isAlive', 'fatherId', 'motherId',
+  // family columns
+  'parent1Id', 'parent2Id', 'orderP1', 'orderP2',
+  'marriedYear', 'marriedMonth', 'marriedDay', 'marriedIsLunar',
+  'endYear', 'endMonth', 'endDay', 'status',
+  // shared
+  'notes',
 ] as const
 
-export const FAMILY_CSV_HEADERS: readonly (keyof CsvFamilyRow)[] = [
-  'id', 'parent1Id', 'parent2Id', 'orderP1', 'orderP2',
-  'marriedYear', 'marriedMonth', 'marriedDay', 'marriedIsLunar',
-  'endYear', 'endMonth', 'endDay', 'status', 'notes',
-] as const
+// Legacy sub-types for internal use (used by csv-export/import utilities)
+export type CsvMemberRow = Pick<CsvUnifiedRow,
+  'id' | 'name' | 'gender' | 'nickname' | 'bio' | 'address' | 'email' | 'phone' |
+  'birthYear' | 'birthMonth' | 'birthDay' | 'birthIsLunar' |
+  'deathYear' | 'deathMonth' | 'deathDay' | 'deathIsLunar' |
+  'isAlive' | 'notes' | 'fatherId' | 'motherId'
+>
+
+export type CsvFamilyRow = Pick<CsvUnifiedRow,
+  'id' | 'parent1Id' | 'parent2Id' | 'orderP1' | 'orderP2' |
+  'marriedYear' | 'marriedMonth' | 'marriedDay' | 'marriedIsLunar' |
+  'endYear' | 'endMonth' | 'endDay' | 'status' | 'notes'
+>

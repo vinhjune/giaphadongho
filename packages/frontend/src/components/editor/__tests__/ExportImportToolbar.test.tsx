@@ -54,7 +54,7 @@ describe('ExportImportToolbar — Import', () => {
     const mockUpload = vi.spyOn(csvClient, 'uploadCsvZip').mockResolvedValue(mockImportResult)
     render(<ExportImportToolbar token="test-token" />)
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
-    const file = new File(['fake zip'], 'test.zip', { type: 'application/zip' })
+    const file = new File(['fake csv'], 'test.csv', { type: 'text/csv' })
     await userEvent.upload(input, file)
     expect(mockUpload).toHaveBeenCalledWith(file, 'test-token')
   })
@@ -65,7 +65,7 @@ describe('ExportImportToolbar — Import', () => {
     )
     render(<ExportImportToolbar token="test-token" />)
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
-    const file = new File(['fake'], 'test.zip', { type: 'application/zip' })
+    const file = new File(['fake'], 'test.csv', { type: 'text/csv' })
     await userEvent.upload(input, file)
     expect(screen.getByRole('button', { name: /import csv/i })).toBeDisabled()
   })
@@ -74,7 +74,7 @@ describe('ExportImportToolbar — Import', () => {
     vi.spyOn(csvClient, 'uploadCsvZip').mockResolvedValue(mockImportResult)
     render(<ExportImportToolbar token="test-token" />)
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
-    await userEvent.upload(input, new File([''], 'test.zip'))
+    await userEvent.upload(input, new File([''], 'test.csv'))
     await waitFor(() => {
       expect(screen.getByText(/10.*thành viên/i)).toBeInTheDocument()
     })
@@ -88,7 +88,7 @@ describe('ExportImportToolbar — Import', () => {
     )
     render(<ExportImportToolbar token="test-token" />)
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
-    await userEvent.upload(input, new File([''], 'test.zip'))
+    await userEvent.upload(input, new File([''], 'test.csv'))
     await waitFor(() => {
       expect(screen.getByText(/invalid gender/i)).toBeInTheDocument()
     })
@@ -99,7 +99,7 @@ describe('ExportImportToolbar — Import', () => {
     const onSuccess = vi.fn()
     render(<ExportImportToolbar token="test-token" onImportSuccess={onSuccess} />)
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
-    await userEvent.upload(input, new File([''], 'test.zip'))
+    await userEvent.upload(input, new File([''], 'test.csv'))
     await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce())
   })
 })

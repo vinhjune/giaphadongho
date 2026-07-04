@@ -26,7 +26,7 @@ export async function downloadCsv(token: string): Promise<void> {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `gia-pha-export-${today}.zip`
+  a.download = `gia-pha-export-${today}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }

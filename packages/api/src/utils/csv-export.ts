@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
-import { zipSync, strToU8 } from 'fflate'
-import { MEMBER_CSV_HEADERS, FAMILY_CSV_HEADERS } from '@giapha/shared/csv-schema'
+import { UNIFIED_CSV_HEADERS } from '@giapha/shared/csv-schema'
+import type { CsvUnifiedRow } from '@giapha/shared/csv-schema'
 
 type PersonRow = {
   id: string; name: string; gender: string | null; nickname: string | null
@@ -11,8 +11,7 @@ type PersonRow = {
 }
 
 type FamilyRow = {
-  id: string; parent1Id: string | null; parent2Id: string | null
-  orderP1: number; orderP2: number
+  id: string; parent1Id: string | null; parent2Id: string | null; orderP1: number; orderP2: number
   marriedYear: number | null; marriedMonth: number | null; marriedDay: number | null; marriedIsLunar: boolean
   endYear: number | null; endMonth: number | null; endDay: number | null
   status: string | null; notes: string | null
@@ -21,23 +20,46 @@ type FamilyRow = {
 const nullToEmpty = (v: unknown): string =>
   v === null || v === undefined ? '' : typeof v === 'boolean' ? String(v) : String(v)
 
-export function serializeMembersToCsv(rows: PersonRow[]): string {
-  return Papa.unparse({
-    fields: [...MEMBER_CSV_HEADERS],
-    data: rows.map(r => MEMBER_CSV_HEADERS.map(h => nullToEmpty(r[h as keyof PersonRow]))),
-  })
+function personToUnifiedRow(p: PersonRow): CsvUnifiedRow {
+  return {
+    type: 'person', id: p.id,
+    name: nullToEmpty(p.name), gender: nullToEmpty(p.gender),
+    nickname: nullToEmpty(p.nickname), bio: nullToEmpty(p.bio),
+    address: nullToEmpty(p.address), email: nullToEmpty(p.email), phone: nullToEmpty(p.phone),
+    birthYear: nullToEmpty(p.birthYear), birthMonth: nullToEmpty(p.birthMonth), birthDay: nullToEmpty(p.birthDay),
+    birthIsLunar: nullToEmpty(p.birthIsLunar),
+    deathYear: nullToEmpty(p.deathYear), deathMonth: nullToEmpty(p.deathMonth), deathDay: nullToEmpty(p.deathDay),
+    deathIsLunar: nullToEmpty(p.deathIsLunar),
+    isAlive: nullToEmpty(p.isAlive),
+    fatherId: nullToEmpty(p.fatherId), motherId: nullToEmpty(p.motherId),
+    notes: nullToEmpty(p.notes),
+    parent1Id: '', parent2Id: '', orderP1: '', orderP2: '',
+    marriedYear: '', marriedMonth: '', marriedDay: '', marriedIsLunar: '',
+    endYear: '', endMonth: '', endDay: '', status: '',
+  }
 }
 
-export function serializeFamiliesToCsv(rows: FamilyRow[]): string {
-  return Papa.unparse({
-    fields: [...FAMILY_CSV_HEADERS],
-    data: rows.map(r => FAMILY_CSV_HEADERS.map(h => nullToEmpty(r[h as keyof FamilyRow]))),
-  })
+function familyToUnifiedRow(f: FamilyRow): CsvUnifiedRow {
+  return {
+    type: 'family', id: f.id,
+    name: '', gender: '', nickname: '', bio: '', address: '', email: '', phone: '',
+    birthYear: '', birthMonth: '', birthDay: '', birthIsLunar: '',
+    deathYear: '', deathMonth: '', deathDay: '', deathIsLunar: '',
+    isAlive: '', fatherId: '', motherId: '',
+    parent1Id: nullToEmpty(f.parent1Id), parent2Id: nullToEmpty(f.parent2Id),
+    orderP1: nullToEmpty(f.orderP1), orderP2: nullToEmpty(f.orderP2),
+    marriedYear: nullToEmpty(f.marriedYear), marriedMonth: nullToEmpty(f.marriedMonth),
+    marriedDay: nullToEmpty(f.marriedDay), marriedIsLunar: nullToEmpty(f.marriedIsLunar),
+    endYear: nullToEmpty(f.endYear), endMonth: nullToEmpty(f.endMonth), endDay: nullToEmpty(f.endDay),
+    status: nullToEmpty(f.status),
+    notes: nullToEmpty(f.notes),
+  }
 }
 
-export function buildExportZip(membersCSV: string, familiesCSV: string): Uint8Array {
-  return zipSync({
-    'members.csv': strToU8(membersCSV),
-    'families.csv': strToU8(familiesCSV),
-  })
+export function serializeToUnifiedCsv(persons: PersonRow[], families: FamilyRow[]): string {
+  const rows: CsvUnifiedRow[] = [
+    ...persons.map(personToUnifiedRow),
+    ...families.map(familyToUnifiedRow),
+  ]
+  return Papa.unparse(rows, { columns: [...UNIFIED_CSV_HEADERS] })
 }

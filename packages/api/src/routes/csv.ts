@@ -1,11 +1,10 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, sql, inArray } from 'drizzle-orm'
-import { unzipSync } from 'fflate'
 import { persons, families, familyMembers } from '@giapha/shared/schema'
 import { requireEditor } from '../middleware/require-auth'
-import { serializeMembersToCsv, serializeFamiliesToCsv, buildExportZip } from '../utils/csv-export'
-import { parseMembersCsv, parseFamiliesCsv, validateImportData, buildFamilyMemberships, coerceMemberRow, coerceFamilyRow } from '../utils/csv-import'
+import { serializeToUnifiedCsv } from '../utils/csv-export'
+import { parseUnifiedCsv, validateImportData, buildFamilyMemberships, coerceMemberRow, coerceFamilyRow } from '../utils/csv-import'
 import type { HonoEnv } from '../types'
 
 const csvRoutes = new Hono<HonoEnv>()
@@ -43,24 +42,18 @@ csvRoutes.get('/export/csv', async (c) => {
     .leftJoin(families, eq(families.id, familyMembers.familyId))
     .all()
 
-  const [allFamilies, allMembers] = await Promise.all([
+  const [allFamilies] = await Promise.all([
     db.select().from(families).all(),
-    db.select().from(familyMembers).all(),
   ])
-  const membersByFamily = allMembers.reduce<Record<string, string[]>>((acc, m) => {
-    ;(acc[m.familyId] ??= []).push(m.personId)
-    return acc
-  }, {})
-  const familyRows = allFamilies.map(f => ({ ...f, children: membersByFamily[f.id] ?? [] }))
+  const csv = serializeToUnifiedCsv(
+    personRows as Parameters<typeof serializeToUnifiedCsv>[0],
+    allFamilies as Parameters<typeof serializeToUnifiedCsv>[1],
+  )
 
-  const membersCSV = serializeMembersToCsv(personRows as Parameters<typeof serializeMembersToCsv>[0])
-  const familiesCSV = serializeFamiliesToCsv(familyRows as Parameters<typeof serializeFamiliesToCsv>[0])
-  const zip = buildExportZip(membersCSV, familiesCSV)
-
-  return new Response(zip, {
+  return new Response(csv, {
     headers: {
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="gia-pha-export-${today}.zip"`,
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="gia-pha-export-${today}.csv"`,
     },
   })
 })
@@ -70,24 +63,8 @@ csvRoutes.post('/import/csv', async (c) => {
   const file = formData.get('file') as File | null
   if (!file) return c.json({ errors: ['No file uploaded'] }, 400)
 
-  const buf = new Uint8Array(await file.arrayBuffer())
-  let unzipped: Record<string, Uint8Array>
-  try {
-    unzipped = unzipSync(buf)
-  } catch {
-    return c.json({ errors: ['Invalid ZIP file'] }, 400)
-  }
-
-  const decoder = new TextDecoder()
-  const membersCSV = unzipped['members.csv'] ? decoder.decode(unzipped['members.csv']) : null
-  const familiesCSV = unzipped['families.csv'] ? decoder.decode(unzipped['families.csv']) : null
-
-  if (!membersCSV) return c.json({ errors: ['members.csv not found in ZIP'] }, 400)
-  if (!familiesCSV) return c.json({ errors: ['families.csv not found in ZIP'] }, 400)
-
-  const { rows: memberRows, errors: mErr } = parseMembersCsv(membersCSV)
-  const { rows: familyRows, errors: fErr } = parseFamiliesCsv(familiesCSV)
-  const parseErrors = [...mErr, ...fErr]
+  const csvText = await file.text()
+  const { members: memberRows, families: familyRows, errors: parseErrors } = parseUnifiedCsv(csvText)
   if (parseErrors.length) return c.json({ errors: parseErrors }, 400)
 
   const crossErrors = validateImportData(memberRows, familyRows)

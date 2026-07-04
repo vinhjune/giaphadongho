@@ -65,7 +65,7 @@ export default function ExportImportToolbar({ token, onImportSuccess }: Props) {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".zip"
+        accept=".csv"
         className="hidden"
         onChange={handleFileChange}
       />

@@ -1,101 +1,147 @@
 import { describe, it, expect } from 'vitest'
 import {
-  parseMembersCsv, parseFamiliesCsv,
-  validateImportData, buildFamilyMemberships
+  parseUnifiedCsv,
+  validateImportData,
+  buildFamilyMemberships,
 } from '../utils/csv-import'
+import { serializeToUnifiedCsv } from '../utils/csv-export'
 
-const validMembersCSV = `id,name,gender,nickname,bio,address,email,phone,birthYear,birthMonth,birthDay,birthIsLunar,deathYear,deathMonth,deathDay,deathIsLunar,isAlive,notes,fatherId,motherId
-p1,Nguyễn Văn A,male,Anh,,,,,1990,3,15,false,,,,,true,,p2,p3
-p2,Nguyễn Văn B,male,,,,,,1960,,,false,2020,5,,false,false,,,
-p3,Trần Thị C,female,,,,,,1965,,,false,,,,,true,,,`
+// Minimal fixtures that produce valid unified CSV via the serializer
+const personA = {
+  id: 'p1', name: 'Nguyễn Văn A', gender: 'male' as const, nickname: null,
+  bio: null, address: null, email: null, phone: null,
+  birthYear: 1950, birthMonth: null, birthDay: null, birthIsLunar: false,
+  deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
+  isAlive: false, notes: null, fatherId: null, motherId: null,
+}
+const personB = {
+  id: 'p2', name: 'Trần Thị B', gender: 'female' as const, nickname: null,
+  bio: null, address: null, email: null, phone: null,
+  birthYear: 1955, birthMonth: null, birthDay: null, birthIsLunar: false,
+  deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
+  isAlive: false, notes: null, fatherId: null, motherId: null,
+}
+const personChild = {
+  id: 'p3', name: 'Nguyễn Văn Con', gender: 'male' as const, nickname: null,
+  bio: null, address: null, email: null, phone: null,
+  birthYear: 1980, birthMonth: null, birthDay: null, birthIsLunar: false,
+  deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
+  isAlive: true, notes: null, fatherId: 'p1', motherId: 'p2',
+}
+const familyAB = {
+  id: 'f1', parent1Id: 'p1', parent2Id: 'p2', orderP1: 1, orderP2: 1,
+  marriedYear: 1978, marriedMonth: null, marriedDay: null, marriedIsLunar: false,
+  endYear: null, endMonth: null, endDay: null, status: 'active', notes: null,
+}
 
-const validFamiliesCSV = `id,parent1Id,parent2Id,orderP1,orderP2,marriedYear,marriedMonth,marriedDay,marriedIsLunar,endYear,endMonth,endDay,status,notes
-f1,p2,p3,1,1,1985,6,10,true,,,,active,`
+function makeValidCsv() {
+  return serializeToUnifiedCsv([personA, personB, personChild], [familyAB])
+}
 
-describe('parseMembersCsv', () => {
-  it('parses valid CSV into CsvMemberRow array', () => {
-    const { rows, errors } = parseMembersCsv(validMembersCSV)
-    expect(errors).toHaveLength(0)
-    expect(rows).toHaveLength(3)
-    expect(rows[0].id).toBe('p1')
-    expect(rows[0].fatherId).toBe('p2')
+describe('parseUnifiedCsv', () => {
+  it('returns members and families from valid CSV', () => {
+    const result = parseUnifiedCsv(makeValidCsv())
+    expect(result.errors).toHaveLength(0)
+    expect(result.members).toHaveLength(3)
+    expect(result.families).toHaveLength(1)
   })
-  it('returns error for missing required id column', () => {
-    const { errors } = parseMembersCsv('name\nBob')
-    expect(errors.length).toBeGreaterThan(0)
-    expect(errors[0]).toMatch(/id/)
+
+  it('parses member id and name correctly', () => {
+    const { members } = parseUnifiedCsv(makeValidCsv())
+    expect(members[0].id).toBe('p1')
+    expect(members[0].name).toBe('Nguyễn Văn A')
   })
-  it('returns error for missing required name column', () => {
-    const { errors } = parseMembersCsv('id\np1')
-    expect(errors.length).toBeGreaterThan(0)
+
+  it('parses family parent1Id correctly', () => {
+    const { families } = parseUnifiedCsv(makeValidCsv())
+    expect(families[0].id).toBe('f1')
+    expect(families[0].parent1Id).toBe('p1')
   })
-  it('returns error for invalid gender value', () => {
-    const bad = validMembersCSV.replace(',male,', ',INVALID,')
-    const { errors } = parseMembersCsv(bad)
-    expect(errors.length).toBeGreaterThan(0)
-    expect(errors[0]).toMatch(/gender/i)
+
+  it('preserves fatherId and motherId on child member', () => {
+    const { members } = parseUnifiedCsv(makeValidCsv())
+    const child = members.find(m => m.id === 'p3')!
+    expect(child.fatherId).toBe('p1')
+    expect(child.motherId).toBe('p2')
   })
+
+  it('returns error when type column is missing', () => {
+    const csv = 'id,name\np1,Test'
+    const result = parseUnifiedCsv(csv)
+    expect(result.errors.length).toBeGreaterThan(0)
+    expect(result.errors[0]).toMatch(/type/)
+  })
+
+  it('returns error for unknown type value', () => {
+    const csv = makeValidCsv().replace(/^person/m, 'unknown')
+    const result = parseUnifiedCsv(csv)
+    expect(result.errors.some(e => /unknown/i.test(e))).toBe(true)
+  })
+
+  it('returns error when person is missing required name', () => {
+    const noName = { ...personA, name: '' }
+    const csv = serializeToUnifiedCsv([noName], [])
+    const result = parseUnifiedCsv(csv)
+    expect(result.errors.some(e => /name/i.test(e))).toBe(true)
+  })
+
+  it('returns error for invalid gender on person row', () => {
+    const badGender = { ...personA, gender: 'INVALID' as 'male' }
+    const csv = serializeToUnifiedCsv([badGender], [])
+    const result = parseUnifiedCsv(csv)
+    expect(result.errors.some(e => /gender/i.test(e))).toBe(true)
+  })
+
+  it('returns error for invalid status on family row', () => {
+    const badStatus = { ...familyAB, status: 'INVALID' }
+    const csv = serializeToUnifiedCsv([personA], [badStatus])
+    const result = parseUnifiedCsv(csv)
+    expect(result.errors.some(e => /status/i.test(e))).toBe(true)
+  })
+
   it('returns error for non-numeric birthYear', () => {
-    const bad = validMembersCSV.replace(',1990,', ',abc,')
-    const { errors } = parseMembersCsv(bad)
-    expect(errors.length).toBeGreaterThan(0)
-  })
-  it('treats empty string as null for nullable fields', () => {
-    const { rows } = parseMembersCsv(validMembersCSV)
-    expect(rows[1].nickname).toBe('')
-    expect(rows[0].deathYear).toBe('')
-  })
-})
-
-describe('parseFamiliesCsv', () => {
-  it('parses valid CSV into CsvFamilyRow array', () => {
-    const { rows, errors } = parseFamiliesCsv(validFamiliesCSV)
-    expect(errors).toHaveLength(0)
-    expect(rows[0].id).toBe('f1')
-  })
-  it('returns error for invalid status value', () => {
-    const bad = validFamiliesCSV.replace(',active,', ',INVALID,')
-    const { errors } = parseFamiliesCsv(bad)
-    expect(errors.length).toBeGreaterThan(0)
-    expect(errors[0]).toMatch(/status/i)
+    const csv = makeValidCsv().replace(/^(person,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,)(\d+)/m, '$1abc')
+    const result = parseUnifiedCsv(csv)
+    expect(result.errors.some(e => /birthYear/i.test(e))).toBe(true)
   })
 })
 
 describe('validateImportData', () => {
-  it('returns no errors for valid cross-referenced data', () => {
-    const { rows: members } = parseMembersCsv(validMembersCSV)
-    const { rows: fams } = parseFamiliesCsv(validFamiliesCSV)
-    expect(validateImportData(members, fams)).toHaveLength(0)
+  it('returns no errors for valid cross-references', () => {
+    const { members, families } = parseUnifiedCsv(makeValidCsv())
+    expect(validateImportData(members, families)).toHaveLength(0)
   })
-  it('returns error when fatherId references non-existent member', () => {
-    const bad = validMembersCSV.replace(',p2,p3', ',GHOST,p3')
-    const { rows: members } = parseMembersCsv(bad)
-    const { rows: fams } = parseFamiliesCsv(validFamiliesCSV)
-    const errors = validateImportData(members, fams)
-    expect(errors.length).toBeGreaterThan(0)
-    expect(errors[0]).toMatch(/fatherId|không tồn tại/i)
+
+  it('returns error when fatherId references missing person', () => {
+    const ghost = { ...personChild, fatherId: 'ghost-id' }
+    const csv = serializeToUnifiedCsv([personA, personB, ghost], [familyAB])
+    const { members, families } = parseUnifiedCsv(csv)
+    const errors = validateImportData(members, families)
+    expect(errors.some(e => e.includes('ghost-id'))).toBe(true)
   })
-  it('returns error when family parent1Id references non-existent member', () => {
-    const badFam = validFamiliesCSV.replace(',p2,', ',GHOST,')
-    const { rows: members } = parseMembersCsv(validMembersCSV)
-    const { rows: fams } = parseFamiliesCsv(badFam)
-    const errors = validateImportData(members, fams)
-    expect(errors.length).toBeGreaterThan(0)
+
+  it('returns error when family parent1Id references missing person', () => {
+    const ghostFamily = { ...familyAB, parent1Id: 'ghost-id' }
+    const csv = serializeToUnifiedCsv([personA, personB], [ghostFamily])
+    const { members, families } = parseUnifiedCsv(csv)
+    const errors = validateImportData(members, families)
+    expect(errors.some(e => e.includes('ghost-id'))).toBe(true)
   })
 })
 
 describe('buildFamilyMemberships', () => {
-  it('matches person to family by fatherId+motherId pair', () => {
-    const { rows: members } = parseMembersCsv(validMembersCSV)
-    const { rows: fams } = parseFamiliesCsv(validFamiliesCSV)
-    const memberships = buildFamilyMemberships(members, fams)
-    expect(memberships).toContainEqual({ familyId: 'f1', personId: 'p1' })
+  it('builds membership for child with matching family', () => {
+    const { members, families } = parseUnifiedCsv(makeValidCsv())
+    const memberships = buildFamilyMemberships(members, families)
+    expect(memberships).toHaveLength(1)
+    expect(memberships[0]).toEqual({ familyId: 'f1', personId: 'p3' })
   })
-  it('returns empty for person with no parents', () => {
-    const { rows: members } = parseMembersCsv(validMembersCSV)
-    const { rows: fams } = parseFamiliesCsv(validFamiliesCSV)
-    const memberships = buildFamilyMemberships(members, fams)
-    const p2entry = memberships.find(m => m.personId === 'p2')
-    expect(p2entry).toBeUndefined()
+
+  it('skips persons with no parents', () => {
+    const { members, families } = parseUnifiedCsv(makeValidCsv())
+    const memberships = buildFamilyMemberships(members, families)
+    const personIds = memberships.map(m => m.personId)
+    expect(personIds).not.toContain('p1')
+    expect(personIds).not.toContain('p2')
   })
 })
