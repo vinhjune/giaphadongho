@@ -163,6 +163,36 @@ export default function PersonsTable() {
       valueFormatter: p => parentFormatter(p.value as string | null),
     },
     {
+      field: 'childOrder',
+      headerName: 'Con thứ',
+      width: 90,
+      editable: true,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: { min: 1, precision: 0 },
+      valueFormatter: p => p.value != null ? String(p.value) : '—',
+    },
+    {
+      field: 'spouseOrders',
+      headerName: 'Vợ/chồng thứ',
+      width: 120,
+      editable: true,
+      valueGetter: p => {
+        const arr = p.data?.spouseOrders as number[] | undefined
+        return arr && arr.length > 0 ? arr.join(', ') : ''
+      },
+      valueSetter: p => {
+        const raw = String(p.newValue ?? '').trim()
+        p.data.spouseOrders = raw === ''
+          ? []
+          : raw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 1)
+        return true
+      },
+      valueFormatter: p => {
+        const v = p.value as string
+        return v && v.length > 0 ? v : '—'
+      },
+    },
+    {
       field: 'phone',
       headerName: 'ĐT',
       flex: 1,
@@ -250,6 +280,8 @@ export default function PersonsTable() {
       notes:        null,
       fatherId:     null,
       motherId:     null,
+      childOrder:   null,
+      spouseOrders: [],
       _isNew:       true,
       _isDirty:     true,
       _isDeleted:   false,

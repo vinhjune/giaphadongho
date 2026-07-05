@@ -53,9 +53,20 @@ personsRoutes.get('/graph/data', async (c) => {
 
   const [allPersons, allFamilies, allMembers] = await Promise.all([
     db.select().from(persons).all(),
-    db.select().from(families).all(),
-    db.select().from(familyMembers).all(),
+    db.select({ id: families.id, parent1Id: families.parent1Id, parent2Id: families.parent2Id, orderP1: families.orderP1, orderP2: families.orderP2, status: families.status, notes: families.notes }).from(families).all(),
+    db.select({ familyId: familyMembers.familyId, personId: familyMembers.personId, childOrder: familyMembers.childOrder }).from(familyMembers).all(),
   ])
+
+  // Map personId → childOrder (person as child in their parent family)
+  const childOrderMap = new Map<string, number | null>()
+  for (const m of allMembers) childOrderMap.set(m.personId, m.childOrder ?? null)
+
+  // Count how many families each person is a parent in (for spouse order badge)
+  const parent1FamilyCount = new Map<string, number>()
+  for (const f of allFamilies) {
+    if (f.parent1Id) parent1FamilyCount.set(f.parent1Id, (parent1FamilyCount.get(f.parent1Id) ?? 0) + 1)
+    if (f.parent2Id) parent1FamilyCount.set(f.parent2Id, (parent1FamilyCount.get(f.parent2Id) ?? 0) + 1)
+  }
 
   // Endogamy detection: two spouses in a family share a common ancestor
   const personToParentFamily = new Map<string, string>()
@@ -89,13 +100,20 @@ personsRoutes.get('/graph/data', async (c) => {
     ...allPersons.map(p => ({
       id: p.id,
       type: 'person' as const,
-      data: user.role === 'guest' ? toPublic(p) : toFull(p),
+      data: {
+        ...(user.role === 'guest' ? toPublic(p) : toFull(p)),
+        childOrder: childOrderMap.get(p.id) ?? null,
+      },
       position: { x: 0, y: 0 },
     })),
     ...allFamilies.map(f => ({
       id: `family:${f.id}`,
       type: 'family' as const,
-      data: { id: f.id },
+      data: {
+        id: f.id,
+        orderP1: f.orderP1,
+        parent1FamilyCount: f.parent1Id ? (parent1FamilyCount.get(f.parent1Id) ?? 1) : 1,
+      },
       position: { x: 0, y: 0 },
     })),
   ]

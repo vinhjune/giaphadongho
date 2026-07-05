@@ -28,8 +28,8 @@ export function parseUnifiedCsv(csv: string): {
     return { members: [], families: [], userLinks: [], errors: ['Missing required column: type'] }
   }
 
-  // Allow CSVs without the user-link columns (backward-compatible).
-  const coreHeaders = UNIFIED_CSV_HEADERS.filter(h => h !== 'username' && h !== 'userRole')
+  // Allow CSVs without user-link or childOrder columns (backward-compatible).
+  const coreHeaders = UNIFIED_CSV_HEADERS.filter(h => h !== 'username' && h !== 'userRole' && h !== 'childOrder')
   const missingCols = coreHeaders.filter(h => !result.meta.fields?.includes(h))
   if (missingCols.length) {
     return { members: [], families: [], userLinks: [], errors: [`Missing columns: ${missingCols.join(', ')}`] }
@@ -62,6 +62,7 @@ export function parseUnifiedCsv(csv: string): {
         deathIsLunar: row.deathIsLunar,
         isAlive: row.isAlive, notes: row.notes,
         fatherId: row.fatherId, motherId: row.motherId,
+        childOrder: row.childOrder ?? '',
       })
       if (hasUserCols && row.username) {
         userLinks.push({ personId: row.id, username: row.username, userRole: row.userRole || 'viewer' })
@@ -106,15 +107,19 @@ export function validateImportData(members: CsvMemberRow[], families: CsvFamilyR
 export function buildFamilyMemberships(
   members: CsvMemberRow[],
   families: CsvFamilyRow[]
-): { familyId: string, personId: string }[] {
-  const memberships: { familyId: string, personId: string }[] = []
+): { familyId: string; personId: string; childOrder: number | null }[] {
+  const memberships: { familyId: string; personId: string; childOrder: number | null }[] = []
   for (const member of members) {
     if (!member.fatherId && !member.motherId) continue
     const family = families.find(f =>
       (f.fatherId || '') === (member.fatherId || '') &&
       (f.motherId || '') === (member.motherId || '')
     )
-    if (family) memberships.push({ familyId: family.id, personId: member.id })
+    if (family) memberships.push({
+      familyId: family.id,
+      personId: member.id,
+      childOrder: member.childOrder ? parseInt(member.childOrder, 10) : null,
+    })
   }
   return memberships
 }

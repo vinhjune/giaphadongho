@@ -19,6 +19,7 @@ export interface CsvUnifiedRow {
   deathDay: string
   deathIsLunar: string
   isAlive: string      // 'true' | 'false'
+  childOrder: string   // birth order within family (1=cả, 2=hai…), or '' for family rows / unset
   // fatherId/motherId: person rows = parent IDs; family rows = the couple (husband/wife)
   fatherId: string
   motherId: string
@@ -38,7 +39,7 @@ export const UNIFIED_CSV_HEADERS: readonly (keyof CsvUnifiedRow)[] = [
   'name', 'gender', 'nickname', 'bio', 'address', 'email', 'phone',
   'birthYear', 'birthMonth', 'birthDay', 'birthIsLunar',
   'deathYear', 'deathMonth', 'deathDay', 'deathIsLunar',
-  'isAlive', 'fatherId', 'motherId',
+  'isAlive', 'childOrder', 'fatherId', 'motherId',
   // family-only columns
   'orderP1', 'orderP2', 'status',
   // shared
@@ -52,7 +53,7 @@ export type CsvMemberRow = Pick<CsvUnifiedRow,
   'id' | 'name' | 'gender' | 'nickname' | 'bio' | 'address' | 'email' | 'phone' |
   'birthYear' | 'birthMonth' | 'birthDay' | 'birthIsLunar' |
   'deathYear' | 'deathMonth' | 'deathDay' | 'deathIsLunar' |
-  'isAlive' | 'notes' | 'fatherId' | 'motherId'
+  'isAlive' | 'childOrder' | 'notes' | 'fatherId' | 'motherId'
 >
 
 // fatherId/motherId in CsvFamilyRow = the couple (maps to DB parent1Id/parent2Id)
@@ -80,6 +81,7 @@ export const CSV_COLUMN_LABELS: Record<keyof CsvUnifiedRow, string> = {
   deathDay:     'ngay_mat',
   deathIsLunar: 'mat_am_lich',
   isAlive:      'con_song',
+  childOrder:   'thu_tu_con',
   fatherId:     'ma_cha',
   motherId:     'ma_me',
   orderP1:      'thu_tu_cha',

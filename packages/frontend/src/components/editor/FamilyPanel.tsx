@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import type { Family } from '@giapha/shared/types'
+import type { Family, ChildMember } from '@giapha/shared/types'
 import type { PersonFull } from '@giapha/shared/types'
 
 type Props = { persons: PersonFull[] }
@@ -27,27 +27,61 @@ export default function FamilyPanel({ persons }: Props) {
       headers: authHeaders,
       body: JSON.stringify({}),
     })
-    const { id } = (await res.json()) as { id: string }
-    setFamilies(f => [...f, { id, parent1Id: null, parent2Id: null, orderP1: 1, orderP2: 1, status: null, notes: null, children: [] }])
+    const { id, orderP1, orderP2 } = (await res.json()) as { id: string; orderP1: number; orderP2: number }
+    setFamilies(f => [...f, { id, parent1Id: null, parent2Id: null, orderP1, orderP2, status: null, notes: null, children: [] }])
   }
 
   async function setParent(familyId: string, slot: 'parent1Id' | 'parent2Id', personId: string | null) {
-    await fetch(`/api/editor/families/${familyId}`, {
+    const res = await fetch(`/api/editor/families/${familyId}`, {
       method: 'PUT',
       headers: authHeaders,
       body: JSON.stringify({ [slot]: personId }),
     })
-    setFamilies(fs => fs.map(f => f.id === familyId ? { ...f, [slot]: personId } : f))
+    const data = await res.json() as { ok: boolean; orderP1?: number; orderP2?: number }
+    setFamilies(fs => fs.map(f => {
+      if (f.id !== familyId) return f
+      const update: Partial<Family> = { [slot]: personId }
+      if (data.orderP1 !== undefined) update.orderP1 = data.orderP1
+      if (data.orderP2 !== undefined) update.orderP2 = data.orderP2
+      return { ...f, ...update }
+    }))
+  }
+
+  async function setOrder(familyId: string, slot: 'orderP1' | 'orderP2', order: number) {
+    await fetch(`/api/editor/families/${familyId}`, {
+      method: 'PUT',
+      headers: authHeaders,
+      body: JSON.stringify({ [slot]: order }),
+    })
+    setFamilies(fs => fs.map(f => f.id === familyId ? { ...f, [slot]: order } : f))
   }
 
   async function addChild(familyId: string, personId: string) {
     await fetch(`/api/editor/families/${familyId}/members/${personId}`, { method: 'POST', headers: authHeaders })
-    setFamilies(fs => fs.map(f => f.id === familyId ? { ...f, children: [...f.children, personId] } : f))
+    setFamilies(fs => fs.map(f => f.id === familyId
+      ? { ...f, children: [...f.children, { personId, childOrder: null }] }
+      : f
+    ))
   }
 
   async function removeChild(familyId: string, personId: string) {
     await fetch(`/api/editor/families/${familyId}/members/${personId}`, { method: 'DELETE', headers: authHeaders })
-    setFamilies(fs => fs.map(f => f.id === familyId ? { ...f, children: f.children.filter(c => c !== personId) } : f))
+    setFamilies(fs => fs.map(f => f.id === familyId
+      ? { ...f, children: f.children.filter(c => c.personId !== personId) }
+      : f
+    ))
+  }
+
+  async function setChildOrder(familyId: string, personId: string, childOrder: number | null) {
+    await fetch(`/api/editor/families/${familyId}/members/${personId}`, {
+      method: 'PATCH',
+      headers: authHeaders,
+      body: JSON.stringify({ childOrder }),
+    })
+    setFamilies(fs => fs.map(f => f.id === familyId
+      ? { ...f, children: f.children.map(c => c.personId === personId ? { ...c, childOrder } : c) }
+      : f
+    ))
   }
 
   async function deleteFamily(id: string) {
@@ -57,10 +91,32 @@ export default function FamilyPanel({ persons }: Props) {
   }
 
   const nameOf = (id: string | null) => id ? (persons.find(p => p.id === id)?.name ?? id) : '—'
+
+  // Count how many families a person is a parent in
+  const familyCountForPerson = (personId: string | null): number => {
+    if (!personId) return 0
+    return families.filter(f => f.parent1Id === personId || f.parent2Id === personId).length
+  }
+
   const available = (familyId: string) => {
     const family = families.find(f => f.id === familyId)
-    return persons.filter(p => p.id !== family?.parent1Id && p.id !== family?.parent2Id && !family?.children.includes(p.id))
+    return persons.filter(p =>
+      p.id !== family?.parent1Id &&
+      p.id !== family?.parent2Id &&
+      !family?.children.some(c => c.personId === p.id)
+    )
   }
+
+  // Sort children: explicit childOrder asc (nulls last), then birthYear asc
+  const sortedChildren = (children: ChildMember[]): ChildMember[] =>
+    [...children].sort((a, b) => {
+      if (a.childOrder !== null && b.childOrder === null) return -1
+      if (a.childOrder === null && b.childOrder !== null) return 1
+      if (a.childOrder !== null && b.childOrder !== null) return a.childOrder - b.childOrder
+      const ay = persons.find(p => p.id === a.personId)?.birthYear ?? Infinity
+      const by = persons.find(p => p.id === b.personId)?.birthYear ?? Infinity
+      return ay - by
+    })
 
   if (loading) return <p className="text-stone-400 text-sm p-4">Đang tải…</p>
 
@@ -84,7 +140,20 @@ export default function FamilyPanel({ persons }: Props) {
           <div className="grid grid-cols-2 gap-2">
             {(['parent1Id', 'parent2Id'] as const).map((slot, i) => (
               <div key={slot}>
-                <label className="text-xs text-stone-500">Cha/Mẹ {i + 1}</label>
+                <label className="text-xs text-stone-500 flex items-center gap-1 flex-wrap">
+                  {i === 0 ? 'Cha' : 'Mẹ'}
+                  {f[slot] && familyCountForPerson(f[slot]) > 1 && (
+                    <span className="text-amber-600 font-medium flex items-center gap-0.5">
+                      ({i === 0 ? 'chồng' : 'vợ'} thứ
+                      <input
+                        type="number" min={1}
+                        value={i === 0 ? f.orderP1 : f.orderP2}
+                        onChange={e => setOrder(f.id, i === 0 ? 'orderP1' : 'orderP2', parseInt(e.target.value) || 1)}
+                        className="w-8 text-center border border-amber-300 rounded px-0.5 ml-0.5"
+                      />)
+                    </span>
+                  )}
+                </label>
                 <select
                   value={f[slot] ?? ''}
                   onChange={e => setParent(f.id, slot, e.target.value || null)}
@@ -100,10 +169,22 @@ export default function FamilyPanel({ persons }: Props) {
           <div>
             <label className="text-xs text-stone-500">Con cái ({f.children.length})</label>
             <div className="flex flex-wrap gap-1 mt-1">
-              {f.children.map(cid => (
-                <span key={cid} className="flex items-center gap-1 bg-stone-100 text-stone-700 text-xs px-2 py-0.5 rounded-full">
-                  {nameOf(cid)}
-                  <button onClick={() => removeChild(f.id, cid)} className="text-stone-400 hover:text-red-500 leading-none">×</button>
+              {sortedChildren(f.children).map(child => (
+                <span key={child.personId}
+                  className="flex items-center gap-1 bg-stone-100 text-stone-700 text-xs px-2 py-0.5 rounded-full">
+                  {nameOf(child.personId)}
+                  <input
+                    type="number" min={1}
+                    defaultValue={child.childOrder ?? ''}
+                    placeholder="thứ"
+                    title="Thứ tự con"
+                    onBlur={e => {
+                      const val = e.target.value ? parseInt(e.target.value, 10) : null
+                      if (val !== child.childOrder) setChildOrder(f.id, child.personId, val)
+                    }}
+                    className="w-8 text-center border border-stone-200 rounded px-1 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                  />
+                  <button onClick={() => removeChild(f.id, child.personId)} className="text-stone-400 hover:text-red-500 leading-none">×</button>
                 </span>
               ))}
             </div>

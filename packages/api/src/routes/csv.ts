@@ -36,6 +36,7 @@ csvRoutes.get('/export/csv', async (c) => {
       notes:        persons.notes,
       fatherId:     families.parent1Id,
       motherId:     families.parent2Id,
+      childOrder:   familyMembers.childOrder,
       username:     users.username,
       userRole:     users.role,
     })
@@ -111,7 +112,7 @@ csvRoutes.post('/import/csv', async (c) => {
   })
 
   // D1 local SQLite enforces a per-statement limit of 100 bound parameters.
-  // Multi-row INSERT chunks: persons 5×18=90, families 7×14=98, memberships 45×2=90.
+  // Multi-row INSERT chunks: persons 5×18=90, families 7×14=98, memberships 33×3=99.
   function chunk<T>(arr: T[], size: number): T[][] {
     const result: T[][] = []
     for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size))
@@ -137,7 +138,7 @@ csvRoutes.post('/import/csv', async (c) => {
   await runBatches(chunk(uniquePersonValues, 5).map(rows => [db.insert(persons).values(rows)]))
   await runBatches(chunk(uniqueFamilyValues, 7).map(rows => [db.insert(families).values(rows)]))
   if (memberships.length > 0) {
-    await runBatches(chunk(memberships, 45).map(rows => [db.insert(familyMembers).values(rows)]))
+    await runBatches(chunk(memberships, 33).map(rows => [db.insert(familyMembers).values(rows)]))
   }
 
   // Restore user↔person links from CSV, then null out any dangling refs not covered.

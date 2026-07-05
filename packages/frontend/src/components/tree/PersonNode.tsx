@@ -8,13 +8,14 @@ export type PersonNodeData = (PersonPublic | PersonFull) & {
   hasChildren?: boolean
   isCollapsed?: boolean
   hiddenCount?: number
+  childOrder?: number | null
   onToggleCollapse?: (id: string) => void
 }
 
 type Props = { data: PersonNodeData }
 
 function PersonNode({ data }: Props) {
-  const { dimmed, isFocus, hasChildren, isCollapsed, hiddenCount, onToggleCollapse } = data
+  const { dimmed, isFocus, hasChildren, isCollapsed, hiddenCount, childOrder, onToggleCollapse } = data
   const initials = data.name.split(' ').slice(-2).map(s => s[0]).join('').toUpperCase()
 
   return (
@@ -54,6 +55,9 @@ function PersonNode({ data }: Props) {
           </button>
         )}
       </div>
+      {childOrder != null && (
+        <p className="mt-0.5 text-xs text-amber-600">con thứ {childOrder}</p>
+      )}
       {isCollapsed && hiddenCount != null && hiddenCount > 0 && (
         <p className="mt-1 text-xs text-stone-400 text-right">▸ {hiddenCount}</p>
       )}

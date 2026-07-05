@@ -14,7 +14,7 @@ const personA = {
   birthYear: 1950, birthMonth: null, birthDay: null, birthIsLunar: false,
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: null, fatherId: null, motherId: null,
-  username: null, userRole: null,
+  username: null, userRole: null, childOrder: null,
 }
 const personB = {
   id: 'p2', name: 'Trần Thị B', gender: 'female' as const, nickname: null,
@@ -22,7 +22,7 @@ const personB = {
   birthYear: 1955, birthMonth: null, birthDay: null, birthIsLunar: false,
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: null, fatherId: null, motherId: null,
-  username: null, userRole: null,
+  username: null, userRole: null, childOrder: null,
 }
 const personChild = {
   id: 'p3', name: 'Nguyễn Văn Con', gender: 'male' as const, nickname: null,
@@ -30,7 +30,7 @@ const personChild = {
   birthYear: 1980, birthMonth: null, birthDay: null, birthIsLunar: false,
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: true, notes: null, fatherId: 'p1', motherId: 'p2',
-  username: null, userRole: null,
+  username: null, userRole: null, childOrder: null,
 }
 const familyAB = {
   id: 'f1', fatherId: 'p1', motherId: 'p2', orderP1: 1, orderP2: 1,
@@ -181,7 +181,9 @@ describe('buildFamilyMemberships', () => {
     const { members, families } = parseUnifiedCsv(makeValidCsv())
     const memberships = buildFamilyMemberships(members, families)
     expect(memberships).toHaveLength(1)
-    expect(memberships[0]).toEqual({ familyId: 'f1', personId: 'p3' })
+    expect(memberships[0].familyId).toBe('f1')
+    expect(memberships[0].personId).toBe('p3')
+    expect(memberships[0].childOrder).toBeNull()
   })
 
   it('skips persons with no parents', () => {
@@ -190,5 +192,34 @@ describe('buildFamilyMemberships', () => {
     const personIds = memberships.map(m => m.personId)
     expect(personIds).not.toContain('p1')
     expect(personIds).not.toContain('p2')
+  })
+
+  it('includes childOrder in membership when set', () => {
+    const childWithOrder = { ...personChild, childOrder: 2 }
+    const csv = serializeToUnifiedCsv([personA, personB, { ...childWithOrder, childOrder: 2 }], [familyAB])
+    const { members, families } = parseUnifiedCsv(csv)
+    const memberships = buildFamilyMemberships(members, families)
+    expect(memberships[0].childOrder).toBe(2)
+  })
+
+  it('childOrder is null when not set in CSV', () => {
+    const { members, families } = parseUnifiedCsv(makeValidCsv())
+    const memberships = buildFamilyMemberships(members, families)
+    expect(memberships[0].childOrder).toBeNull()
+  })
+})
+
+describe('parseUnifiedCsv — childOrder backward compat', () => {
+  it('imports CSV without thu_tu_con column without error', () => {
+    const csv = makeValidCsv()
+    const lines = csv.split('\n')
+    const headerCols = lines[0].split(',')
+    const colIdx = headerCols.indexOf('thu_tu_con')
+    const stripped = lines.map(line =>
+      line.split(',').filter((_, i) => i !== colIdx).join(',')
+    ).join('\n')
+    const result = parseUnifiedCsv(stripped)
+    expect(result.errors).toHaveLength(0)
+    expect(result.members).toHaveLength(3)
   })
 })

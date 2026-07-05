@@ -29,6 +29,14 @@ export type PersonFull = PersonPublic & {
 export type PersonWithParents = PersonFull & {
   fatherId: string | null
   motherId: string | null
+  childOrder: number | null
+  /** orderP1 values from all families where this person is parent1 or parent2 */
+  spouseOrders: number[]
+}
+
+export type ChildMember = {
+  personId:   string
+  childOrder: number | null
 }
 
 export type Family = {
@@ -39,8 +47,8 @@ export type Family = {
   orderP2: number
   status: 'active' | 'divorced' | 'widowed' | null
   notes: string | null
-  /** Children's person IDs — populated via JOIN */
-  children: string[]
+  /** Children sorted by childOrder asc (nulls last) then birthYear asc */
+  children: ChildMember[]
 }
 
 export type FamilyEvent = {

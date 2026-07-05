@@ -2,8 +2,8 @@ import { UNIFIED_CSV_HEADERS, CSV_COLUMN_LABELS, CSV_COLUMN_FIELDS } from '@giap
 import { describe, it, expect } from 'vitest'
 
 describe('CSV schema constants', () => {
-  it('unified headers have 26 columns', () => {
-    expect(UNIFIED_CSV_HEADERS).toHaveLength(26)
+  it('unified headers have 27 columns', () => {
+    expect(UNIFIED_CSV_HEADERS).toHaveLength(27)
   })
   it('first column is type', () => {
     expect(UNIFIED_CSV_HEADERS[0]).toBe('type')
@@ -14,6 +14,7 @@ describe('CSV schema constants', () => {
     expect(UNIFIED_CSV_HEADERS).toContain('fatherId')
     expect(UNIFIED_CSV_HEADERS).toContain('motherId')
     expect(UNIFIED_CSV_HEADERS).toContain('isAlive')
+    expect(UNIFIED_CSV_HEADERS).toContain('childOrder')
   })
   it('includes all family fields', () => {
     expect(UNIFIED_CSV_HEADERS).toContain('orderP1')
@@ -40,6 +41,7 @@ describe('CSV_COLUMN_LABELS', () => {
   it('maps id → ma', () => expect(CSV_COLUMN_LABELS.id).toBe('ma'))
   it('maps name → ho_ten', () => expect(CSV_COLUMN_LABELS.name).toBe('ho_ten'))
   it('maps isAlive → con_song', () => expect(CSV_COLUMN_LABELS.isAlive).toBe('con_song'))
+  it('maps childOrder → thu_tu_con', () => expect(CSV_COLUMN_LABELS.childOrder).toBe('thu_tu_con'))
   it('covers every field in UNIFIED_CSV_HEADERS', () => {
     UNIFIED_CSV_HEADERS.forEach(field => {
       expect(CSV_COLUMN_LABELS[field]).toBeTruthy()

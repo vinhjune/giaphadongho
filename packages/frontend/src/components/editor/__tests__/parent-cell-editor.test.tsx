@@ -30,6 +30,8 @@ function makePerson(id: string, name: string, birthYear?: number): PersonWithPar
     deathIsLunar: false,
     fatherId: null,
     motherId: null,
+    childOrder: null,
+    spouseOrders: [],
   }
 }
 

@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq, and, isNull, count } from 'drizzle-orm'
+import { eq, and, isNull, count, or, asc } from 'drizzle-orm'
 import { z } from 'zod'
 import { persons, families, familyMembers, users } from '@giapha/shared/schema'
 import { hashPassword } from '../lib/auth'
@@ -14,7 +14,13 @@ type DB = DrizzleD1Database<typeof schema>
 // ─── Family sync helper ───────────────────────────────────────────────────────
 // Sets a person's parents by finding/creating the matching family and moving
 // the child. Deletes the old family if it becomes childless.
-async function syncParents(db: DB, personId: string, fatherId: string | null, motherId: string | null) {
+async function syncParents(
+  db: DB,
+  personId: string,
+  fatherId: string | null,
+  motherId: string | null,
+  childOrder?: number | null,
+) {
   // Find current family where this person is a child
   const currentMembership = await db
     .select({ familyId: familyMembers.familyId })
@@ -32,7 +38,12 @@ async function syncParents(db: DB, personId: string, fatherId: string | null, mo
     if (currentFamily &&
         (currentFamily.parent1Id ?? null) === fatherId &&
         (currentFamily.parent2Id ?? null) === motherId) {
-      return // no change
+      if (childOrder !== undefined) {
+        await db.update(familyMembers)
+          .set({ childOrder: childOrder ?? null })
+          .where(and(eq(familyMembers.personId, personId), eq(familyMembers.familyId, currentMembership.familyId)))
+      }
+      return
     }
 
     // Remove from current family
@@ -58,11 +69,11 @@ async function syncParents(db: DB, personId: string, fatherId: string | null, mo
 
   if (!targetFamily) {
     const newFamilyId = crypto.randomUUID()
-    await db.insert(families).values({ id: newFamilyId, parent1Id: fatherId, parent2Id: motherId })
+    await db.insert(families).values({ id: newFamilyId, parent1Id: fatherId, parent2Id: motherId, orderP1: 1, orderP2: 1 })
     targetFamily = { id: newFamilyId }
   }
 
-  await db.insert(familyMembers).values({ familyId: targetFamily.id, personId })
+  await db.insert(familyMembers).values({ familyId: targetFamily.id, personId, childOrder: childOrder ?? null })
 }
 
 const editorRoutes = new Hono<HonoEnv>()
@@ -70,7 +81,7 @@ editorRoutes.use('*', requireEditor)
 
 // ─── Persons CRUD ─────────────────────────────────────────────────────────────
 
-// GET /api/editor/persons/with-parents — persons list with derived fatherId/motherId
+// GET /api/editor/persons/with-parents — persons list with derived fatherId/motherId/childOrder/spouseOrders
 // Must be registered before any :id routes to avoid param capture
 editorRoutes.get('/persons/with-parents', async (c) => {
   const db = drizzle(c.env.giapha_db)
@@ -99,11 +110,34 @@ editorRoutes.get('/persons/with-parents', async (c) => {
       updatedAt:    persons.updatedAt,
       fatherId:     families.parent1Id,
       motherId:     families.parent2Id,
+      childOrder:   familyMembers.childOrder,
     })
     .from(persons)
     .leftJoin(familyMembers, eq(familyMembers.personId, persons.id))
     .leftJoin(families, eq(families.id, familyMembers.familyId))
     .all()
+
+  // Build spouseOrders: collect orderP1 for each family where person is parent1 or parent2
+  const allFamilies = await db.select({
+    parent1Id: families.parent1Id,
+    parent2Id: families.parent2Id,
+    orderP1:   families.orderP1,
+  }).from(families).all()
+
+  // Map personId → sorted list of orderP1 values from their spouse families
+  const spouseOrderMap = new Map<string, number[]>()
+  for (const f of allFamilies) {
+    if (f.parent1Id) {
+      const arr = spouseOrderMap.get(f.parent1Id) ?? []
+      arr.push(f.orderP1)
+      spouseOrderMap.set(f.parent1Id, arr)
+    }
+    if (f.parent2Id) {
+      const arr = spouseOrderMap.get(f.parent2Id) ?? []
+      arr.push(f.orderP1)
+      spouseOrderMap.set(f.parent2Id, arr)
+    }
+  }
 
   return c.json(rows.map(r => ({
     id:           r.id,
@@ -127,13 +161,15 @@ editorRoutes.get('/persons/with-parents', async (c) => {
     notes:        r.notes ?? null,
     fatherId:     r.fatherId ?? null,
     motherId:     r.motherId ?? null,
+    childOrder:   r.childOrder ?? null,
+    spouseOrders: (spouseOrderMap.get(r.id) ?? []).sort((a, b) => a - b),
   })))
 })
 
 // POST /api/editor/persons/batch — batch upsert + delete + family sync
 // Must be registered before /persons/:id routes
 const batchUpsertItemSchema = z.object({
-  id:           z.string().uuid().optional(),
+  id:           z.string().min(1).optional(),
   name:         z.string().min(1),
   gender:       z.enum(['male', 'female', 'other']).nullable().optional(),
   nickname:     z.string().nullable().optional(),
@@ -151,13 +187,15 @@ const batchUpsertItemSchema = z.object({
   deathIsLunar: z.boolean().optional(),
   isAlive:      z.boolean().optional(),
   notes:        z.string().nullable().optional(),
-  fatherId:     z.string().uuid().nullable().optional(),
-  motherId:     z.string().uuid().nullable().optional(),
+  fatherId:     z.string().min(1).nullable().optional(),
+  motherId:     z.string().min(1).nullable().optional(),
+  childOrder:   z.number().int().min(1).nullable().optional(),
+  spouseOrders: z.array(z.number().int().min(1)).optional(),
 })
 
 const batchSchema = z.object({
   upsert: z.array(batchUpsertItemSchema).optional().default([]),
-  delete: z.array(z.string().uuid()).optional().default([]),
+  delete: z.array(z.string().min(1)).optional().default([]),
 })
 
 editorRoutes.post('/persons/batch', async (c) => {
@@ -204,7 +242,26 @@ editorRoutes.post('/persons/batch', async (c) => {
 
       // Sync parent/family assignment when fatherId or motherId is explicitly provided
       if ('fatherId' in item || 'motherId' in item) {
-        await syncParents(db, personId, fatherId ?? null, motherId ?? null)
+        await syncParents(db, personId, fatherId ?? null, motherId ?? null, item.childOrder ?? null)
+      }
+
+      // Update orderP1 of families where person is a parent (spouse order)
+      if (item.spouseOrders !== undefined) {
+        const parentFamilies = await db
+          .select({ id: families.id })
+          .from(families)
+          .where(or(eq(families.parent1Id, personId), eq(families.parent2Id, personId)))
+          .orderBy(asc(families.orderP1))
+          .all()
+        if (item.spouseOrders.length === 0) {
+          for (const f of parentFamilies) {
+            await db.update(families).set({ orderP1: 1 }).where(eq(families.id, f.id))
+          }
+        } else {
+          for (let i = 0; i < Math.min(item.spouseOrders.length, parentFamilies.length); i++) {
+            await db.update(families).set({ orderP1: item.spouseOrders[i] }).where(eq(families.id, parentFamilies[i].id))
+          }
+        }
       }
 
       saved.push(personId)
@@ -329,12 +386,17 @@ editorRoutes.get('/families', async (c) => {
   const db = drizzle(c.env.giapha_db)
   const [allFamilies, allMembers] = await Promise.all([
     db.select().from(families).all(),
-    db.select().from(familyMembers).all(),
+    db.select({
+      familyId:   familyMembers.familyId,
+      personId:   familyMembers.personId,
+      childOrder: familyMembers.childOrder,
+    }).from(familyMembers).all(),
   ])
-  const membersByFamily = allMembers.reduce<Record<string, string[]>>((acc, m) => {
-    ;(acc[m.familyId] ??= []).push(m.personId)
-    return acc
-  }, {})
+  const membersByFamily = allMembers.reduce<Record<string, { personId: string; childOrder: number | null }[]>>(
+    (acc, m) => {
+      ;(acc[m.familyId] ??= []).push({ personId: m.personId, childOrder: m.childOrder ?? null })
+      return acc
+    }, {})
   return c.json(allFamilies.map(f => ({ ...f, children: membersByFamily[f.id] ?? [] })))
 })
 
@@ -342,15 +404,19 @@ editorRoutes.post('/families', async (c) => {
   const db = drizzle(c.env.giapha_db)
   const body = await c.req.json<Partial<typeof families.$inferInsert>>()
   const id = crypto.randomUUID()
-  await db.insert(families).values({ ...body, id })
-  return c.json({ id }, 201)
+
+  const { orderP1 = 1, orderP2 = 1, ...rest } = body
+
+  await db.insert(families).values({ ...rest, id, orderP1, orderP2 })
+  return c.json({ id, orderP1, orderP2 }, 201)
 })
 
 editorRoutes.put('/families/:id', async (c) => {
   const db = drizzle(c.env.giapha_db)
   const body = await c.req.json<Partial<typeof families.$inferInsert>>()
+
   await db.update(families).set(body).where(eq(families.id, c.req.param('id')))
-  return c.json({ ok: true })
+  return c.json({ ok: true, orderP1: body.orderP1, orderP2: body.orderP2 })
 })
 
 editorRoutes.delete('/families/:id', async (c) => {
@@ -363,11 +429,25 @@ editorRoutes.delete('/families/:id', async (c) => {
 
 editorRoutes.post('/families/:familyId/members/:personId', async (c) => {
   const db = drizzle(c.env.giapha_db)
+  const body = await c.req.json<{ childOrder?: number | null }>().catch(() => ({}))
   await db.insert(familyMembers).values({
     familyId: c.req.param('familyId'),
     personId: c.req.param('personId'),
+    childOrder: (body as { childOrder?: number | null }).childOrder ?? null,
   })
   return c.json({ ok: true }, 201)
+})
+
+editorRoutes.patch('/families/:familyId/members/:personId', async (c) => {
+  const db = drizzle(c.env.giapha_db)
+  const body = await c.req.json<{ childOrder: number | null }>()
+  await db.update(familyMembers)
+    .set({ childOrder: body.childOrder })
+    .where(and(
+      eq(familyMembers.familyId, c.req.param('familyId')),
+      eq(familyMembers.personId, c.req.param('personId')),
+    ))
+  return c.json({ ok: true })
 })
 
 editorRoutes.delete('/families/:familyId/members/:personId', async (c) => {

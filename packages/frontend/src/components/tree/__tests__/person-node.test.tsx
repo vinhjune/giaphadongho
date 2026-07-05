@@ -110,4 +110,19 @@ describe('PersonNode', () => {
     })
     expect(queryByText(/▸/)).toBeNull()
   })
+
+  it('shows con thu N badge when childOrder is set', () => {
+    const { getByText } = wrap({ ...basePerson, childOrder: 2 })
+    expect(getByText(/con thứ 2/)).toBeTruthy()
+  })
+
+  it('does not show con thu badge when childOrder is null', () => {
+    const { queryByText } = wrap({ ...basePerson, childOrder: null })
+    expect(queryByText(/con thứ/)).toBeNull()
+  })
+
+  it('does not show con thu badge when childOrder is undefined', () => {
+    const { queryByText } = wrap(basePerson)
+    expect(queryByText(/con thứ/)).toBeNull()
+  })
 })

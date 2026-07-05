@@ -13,7 +13,7 @@ const personWithParents = {
   birthYear: 1990, birthMonth: 3, birthDay: 15, birthIsLunar: false,
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: true, notes: null, fatherId: 'p2', motherId: 'p3',
-  username: null, userRole: null,
+  username: null, userRole: null, childOrder: null,
 }
 const personNoParents = {
   id: 'p2', name: 'Nguyễn Văn B', gender: 'male', nickname: null,
@@ -21,7 +21,7 @@ const personNoParents = {
   birthYear: 1960, birthMonth: null, birthDay: null, birthIsLunar: false,
   deathYear: 2020, deathMonth: 5, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: 'Ghi chú', fatherId: null, motherId: null,
-  username: null, userRole: null,
+  username: null, userRole: null, childOrder: null,
 }
 const familyFixture = {
   id: 'f1', fatherId: 'p2', motherId: 'p3', orderP1: 1, orderP2: 1,
@@ -135,5 +135,24 @@ describe('serializeToUnifiedCsv', () => {
     const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
     expect(row.username).toBe('')
     expect(row.userRole).toBe('')
+  })
+
+  it('person row serializes childOrder when set', () => {
+    const personWithOrder = { ...personWithParents, childOrder: 3 }
+    const csv = serializeToUnifiedCsv([personWithOrder], [])
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
+    expect(row.childOrder).toBe('3')
+  })
+
+  it('person row has empty childOrder when null', () => {
+    const csv = serializeToUnifiedCsv([personWithParents], [])
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
+    expect(row.childOrder).toBe('')
+  })
+
+  it('family row has empty childOrder', () => {
+    const csv = serializeToUnifiedCsv([], [familyFixture])
+    const row = parseWithEnglishKeys(csv).data[0] as Record<string, string>
+    expect(row.childOrder).toBe('')
   })
 })

@@ -60,10 +60,11 @@ export const families = sqliteTable('families', {
 
 // ─── Family Members ───────────────────────────────────────────────────────────
 // Children in a family. UNIQUE(person_id) ensures a child belongs to exactly one family.
-// (Adoption not tracked at schema level — use notes field if needed.)
+// childOrder: manual birth order (1=cả, 2=hai…); null = use birthYear for display sort.
 export const familyMembers = sqliteTable('family_members', {
-  familyId: text('family_id').notNull().references(() => families.id, { onDelete: 'cascade' }),
-  personId: text('person_id').notNull().unique().references(() => persons.id, { onDelete: 'cascade' }),
+  familyId:   text('family_id').notNull().references(() => families.id, { onDelete: 'cascade' }),
+  personId:   text('person_id').notNull().unique().references(() => persons.id, { onDelete: 'cascade' }),
+  childOrder: integer('child_order'),
 }, (t) => [
   primaryKey({ columns: [t.familyId, t.personId] }),
 ])
