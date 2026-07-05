@@ -1,9 +1,9 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 
-function FamilyNode() {
+function FamilyNode({ data }: { data?: { dimmed?: boolean } }) {
   return (
-    <div className="w-4 h-4 rounded-full bg-amber-400 border-2 border-amber-600">
+    <div className={`w-4 h-4 rounded-full bg-amber-400 border-2 border-amber-600 ${data?.dimmed ? 'opacity-30' : ''}`}>
       <Handle type="target" position={Position.Top} className="!w-1 !h-1 !opacity-0" />
       <Handle type="source" position={Position.Bottom} className="!w-1 !h-1 !opacity-0" />
     </div>

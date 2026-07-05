@@ -2,15 +2,27 @@ import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import type { PersonPublic, PersonFull } from '@giapha/shared/types'
 
-type Props = { data: PersonPublic | PersonFull }
+export type PersonNodeData = (PersonPublic | PersonFull) & {
+  dimmed?: boolean
+  isFocus?: boolean
+  hasChildren?: boolean
+  isCollapsed?: boolean
+  hiddenCount?: number
+  onToggleCollapse?: (id: string) => void
+}
+
+type Props = { data: PersonNodeData }
 
 function PersonNode({ data }: Props) {
+  const { dimmed, isFocus, hasChildren, isCollapsed, hiddenCount, onToggleCollapse } = data
   const initials = data.name.split(' ').slice(-2).map(s => s[0]).join('').toUpperCase()
 
   return (
     <div
       className={`w-max rounded-xl border shadow-sm px-3 py-2 text-sm select-none
-        ${data.isAlive ? 'bg-white border-stone-200' : 'bg-stone-50 border-stone-300'}`}
+        ${data.isAlive ? 'bg-white border-stone-200' : 'bg-stone-50 border-stone-300'}
+        ${dimmed ? 'opacity-30 grayscale' : ''}
+        ${isFocus ? 'ring-2 ring-amber-500' : ''}`}
     >
       <Handle type="target" position={Position.Top} className="!w-2 !h-2" />
       <div className="flex items-center gap-2">
@@ -32,7 +44,19 @@ function PersonNode({ data }: Props) {
             </p>
           )}
         </div>
+        {hasChildren && onToggleCollapse && (
+          <button
+            title="collapse"
+            className="ml-1 text-stone-400 hover:text-stone-600 text-xs leading-none"
+            onClick={e => { e.stopPropagation(); onToggleCollapse(data.id) }}
+          >
+            {isCollapsed ? '▸' : '▾'}
+          </button>
+        )}
       </div>
+      {isCollapsed && hiddenCount != null && hiddenCount > 0 && (
+        <p className="mt-1 text-xs text-stone-400 text-right">▸ {hiddenCount}</p>
+      )}
       <Handle type="source" position={Position.Bottom} className="!w-2 !h-2" />
     </div>
   )

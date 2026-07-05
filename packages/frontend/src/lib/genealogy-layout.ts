@@ -3,8 +3,8 @@ import dagre from 'dagre'
 type RawNode = { id: string; type: 'person' | 'family'; position: { x: number; y: number }; data: unknown }
 type RawEdge = { id: string; source: string; target: string }
 
-const PERSON_W = 160
-const PERSON_H = 80
+export const PERSON_W = 160
+export const PERSON_H = 80
 const FAMILY_W = 16
 const FAMILY_H = 16
 
