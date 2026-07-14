@@ -2,8 +2,8 @@ import { UNIFIED_CSV_HEADERS, CSV_COLUMN_LABELS, CSV_COLUMN_FIELDS } from '@giap
 import { describe, it, expect } from 'vitest'
 
 describe('CSV schema constants', () => {
-  it('unified headers have 27 columns', () => {
-    expect(UNIFIED_CSV_HEADERS).toHaveLength(27)
+  it('unified headers have 29 columns', () => {
+    expect(UNIFIED_CSV_HEADERS).toHaveLength(29)
   })
   it('first column is type', () => {
     expect(UNIFIED_CSV_HEADERS[0]).toBe('type')

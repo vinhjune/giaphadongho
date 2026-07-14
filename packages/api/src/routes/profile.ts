@@ -26,6 +26,8 @@ function toFull(p: typeof persons.$inferSelect): PersonFull {
     birthIsLunar: p.birthIsLunar ?? false,
     isAlive: p.isAlive,
     notes: p.notes ?? null,
+    ngoaiToc: p.ngoaiToc,
+    thuTuDoi: p.thuTuDoi ?? null,
     bio: p.bio ?? null,
     address: p.address ?? null,
     email: p.email ?? null,

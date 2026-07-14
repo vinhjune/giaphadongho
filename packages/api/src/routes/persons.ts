@@ -20,6 +20,8 @@ function toPublic(p: typeof persons.$inferSelect): PersonPublic {
     birthIsLunar: p.birthIsLunar ?? false,
     isAlive: p.isAlive,
     notes: p.notes ?? null,
+    ngoaiToc: p.ngoaiToc,
+    thuTuDoi: p.thuTuDoi ?? null,
   }
 }
 

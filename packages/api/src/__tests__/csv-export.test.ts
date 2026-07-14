@@ -14,6 +14,7 @@ const personWithParents = {
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: true, notes: null, fatherId: 'p2', motherId: 'p3',
   username: null, userRole: null, childOrder: null,
+  ngoaiToc: false, thuTuDoi: null,
 }
 const personNoParents = {
   id: 'p2', name: 'Nguyễn Văn B', gender: 'male', nickname: null,
@@ -22,6 +23,7 @@ const personNoParents = {
   deathYear: 2020, deathMonth: 5, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: 'Ghi chú', fatherId: null, motherId: null,
   username: null, userRole: null, childOrder: null,
+  ngoaiToc: false, thuTuDoi: null,
 }
 const familyFixture = {
   id: 'f1', fatherId: 'p2', motherId: 'p3', orderP1: 1, orderP2: 1,

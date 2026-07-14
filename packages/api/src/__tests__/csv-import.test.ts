@@ -15,6 +15,7 @@ const personA = {
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: null, fatherId: null, motherId: null,
   username: null, userRole: null, childOrder: null,
+  ngoaiToc: false, thuTuDoi: null,
 }
 const personB = {
   id: 'p2', name: 'Trần Thị B', gender: 'female' as const, nickname: null,
@@ -23,6 +24,7 @@ const personB = {
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: false, notes: null, fatherId: null, motherId: null,
   username: null, userRole: null, childOrder: null,
+  ngoaiToc: false, thuTuDoi: null,
 }
 const personChild = {
   id: 'p3', name: 'Nguyễn Văn Con', gender: 'male' as const, nickname: null,
@@ -31,6 +33,7 @@ const personChild = {
   deathYear: null, deathMonth: null, deathDay: null, deathIsLunar: false,
   isAlive: true, notes: null, fatherId: 'p1', motherId: 'p2',
   username: null, userRole: null, childOrder: null,
+  ngoaiToc: false, thuTuDoi: null,
 }
 const familyAB = {
   id: 'f1', fatherId: 'p1', motherId: 'p2', orderP1: 1, orderP2: 1,

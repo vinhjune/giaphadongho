@@ -9,6 +9,7 @@ type PersonRow = {
   deathYear: number | null; deathMonth: number | null; deathDay: number | null; deathIsLunar: boolean
   isAlive: boolean; notes: string | null; fatherId: string | null; motherId: string | null
   username: string | null; userRole: string | null; childOrder: number | null
+  ngoaiToc: boolean; thuTuDoi: number | null
 }
 
 type FamilyRow = {
@@ -31,6 +32,8 @@ function personToUnifiedRow(p: PersonRow): CsvUnifiedRow {
     deathIsLunar: nullToEmpty(p.deathIsLunar),
     isAlive: nullToEmpty(p.isAlive),
     childOrder: nullToEmpty(p.childOrder),
+    ngoaiToc: nullToEmpty(p.ngoaiToc),
+    thuTuDoi: nullToEmpty(p.thuTuDoi),
     fatherId: nullToEmpty(p.fatherId), motherId: nullToEmpty(p.motherId),
     orderP1: '', orderP2: '', status: '',
     notes: nullToEmpty(p.notes),
@@ -44,7 +47,7 @@ function familyToUnifiedRow(f: FamilyRow): CsvUnifiedRow {
     name: '', gender: '', nickname: '', bio: '', address: '', email: '', phone: '',
     birthYear: '', birthMonth: '', birthDay: '', birthIsLunar: '',
     deathYear: '', deathMonth: '', deathDay: '', deathIsLunar: '',
-    isAlive: '', childOrder: '',
+    isAlive: '', childOrder: '', ngoaiToc: '', thuTuDoi: '',
     fatherId: nullToEmpty(f.fatherId), motherId: nullToEmpty(f.motherId),
     orderP1: nullToEmpty(f.orderP1), orderP2: nullToEmpty(f.orderP2),
     status: nullToEmpty(f.status),

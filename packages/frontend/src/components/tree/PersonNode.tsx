@@ -22,6 +22,7 @@ function PersonNode({ data }: Props) {
     <div
       className={`w-max rounded-xl border shadow-sm px-3 py-2 text-sm select-none
         ${data.isAlive ? 'bg-white border-stone-200' : 'bg-stone-50 border-stone-300'}
+        ${data.ngoaiToc ? 'border-dashed' : ''}
         ${dimmed ? 'opacity-30 grayscale' : ''}
         ${isFocus ? 'ring-2 ring-amber-500' : ''}`}
     >
@@ -57,6 +58,12 @@ function PersonNode({ data }: Props) {
       </div>
       {childOrder != null && (
         <p className="mt-0.5 text-xs text-amber-600">con thứ {childOrder}</p>
+      )}
+      {data.thuTuDoi != null && (
+        <p className="mt-0.5 text-xs text-stone-400">đời {data.thuTuDoi}</p>
+      )}
+      {data.ngoaiToc && (
+        <p className="mt-0.5 text-xs text-stone-400 italic">ngoại tộc</p>
       )}
       {isCollapsed && hiddenCount != null && hiddenCount > 0 && (
         <p className="mt-1 text-xs text-stone-400 text-right">▸ {hiddenCount}</p>

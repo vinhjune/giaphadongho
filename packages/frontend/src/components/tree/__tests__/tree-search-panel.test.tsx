@@ -5,10 +5,10 @@ import TreeSearchPanel from '../TreeSearchPanel'
 import type { PersonPublic } from '@giapha/shared/types'
 
 const makePersons = (): PersonPublic[] => [
-  { id: '1', name: 'Nguyễn Văn Đức', gender: 'male', nickname: null, avatarUrl: null, birthYear: 1950, birthMonth: null, birthDay: null, birthIsLunar: false, isAlive: false, notes: null },
-  { id: '2', name: 'Nguyễn Văn An', gender: 'male', nickname: 'An', avatarUrl: null, birthYear: 1980, birthMonth: null, birthDay: null, birthIsLunar: false, isAlive: true, notes: null },
-  { id: '3', name: 'Trần Thị Hoa', gender: 'female', nickname: null, avatarUrl: null, birthYear: null, birthMonth: null, birthDay: null, birthIsLunar: false, isAlive: true, notes: null },
-  { id: '4', name: 'Lê Đình Phúc', gender: 'male', nickname: 'Phúc', avatarUrl: null, birthYear: 1970, birthMonth: null, birthDay: null, birthIsLunar: false, isAlive: true, notes: null },
+  { id: '1', name: 'Nguyễn Văn Đức', gender: 'male', nickname: null, avatarUrl: null, birthYear: 1950, birthMonth: null, birthDay: null, birthIsLunar: false, isAlive: false, notes: null, ngoaiToc: false, thuTuDoi: null },
+  { id: '2', name: 'Nguyễn Văn An', gender: 'male', nickname: 'An', avatarUrl: null, birthYear: 1980, birthMonth: null, birthDay: null, birthIsLunar: false, isAlive: true, notes: null, ngoaiToc: false, thuTuDoi: null },
+  { id: '3', name: 'Trần Thị Hoa', gender: 'female', nickname: null, avatarUrl: null, birthYear: null, birthMonth: null, birthDay: null, birthIsLunar: false, isAlive: true, notes: null, ngoaiToc: false, thuTuDoi: null },
+  { id: '4', name: 'Lê Đình Phúc', gender: 'male', nickname: 'Phúc', avatarUrl: null, birthYear: 1970, birthMonth: null, birthDay: null, birthIsLunar: false, isAlive: true, notes: null, ngoaiToc: false, thuTuDoi: null },
 ]
 
 describe('TreeSearchPanel', () => {

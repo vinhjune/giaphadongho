@@ -20,6 +20,8 @@ function makePerson(id: string, name: string, birthYear?: number): PersonWithPar
     birthIsLunar: false,
     isAlive: true,
     notes: null,
+    ngoaiToc: false,
+    thuTuDoi: null,
     bio: null,
     address: null,
     email: null,

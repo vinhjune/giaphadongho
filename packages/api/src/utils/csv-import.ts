@@ -28,8 +28,9 @@ export function parseUnifiedCsv(csv: string): {
     return { members: [], families: [], userLinks: [], errors: ['Missing required column: type'] }
   }
 
-  // Allow CSVs without user-link or childOrder columns (backward-compatible).
-  const coreHeaders = UNIFIED_CSV_HEADERS.filter(h => h !== 'username' && h !== 'userRole' && h !== 'childOrder')
+  // Allow CSVs without user-link, childOrder, ngoaiToc, or thuTuDoi columns (backward-compatible).
+  const optionalHeaders = new Set(['username', 'userRole', 'childOrder', 'ngoaiToc', 'thuTuDoi'])
+  const coreHeaders = UNIFIED_CSV_HEADERS.filter(h => !optionalHeaders.has(h))
   const missingCols = coreHeaders.filter(h => !result.meta.fields?.includes(h))
   if (missingCols.length) {
     return { members: [], families: [], userLinks: [], errors: [`Missing columns: ${missingCols.join(', ')}`] }
@@ -52,6 +53,8 @@ export function parseUnifiedCsv(csv: string): {
       if (!isNumericOrEmpty(row.birthDay)) errors.push(`Row ${line}: birthDay must be numeric`)
       if (!isNumericOrEmpty(row.deathYear)) errors.push(`Row ${line}: deathYear must be numeric`)
       if (!['true', 'false', ''].includes(row.isAlive)) errors.push(`Row ${line}: isAlive must be true/false`)
+      if (!['true', 'false', ''].includes(row.ngoaiToc ?? '')) errors.push(`Row ${line}: ngoaiToc must be true/false`)
+      if (!isNumericOrEmpty(row.thuTuDoi ?? '')) errors.push(`Row ${line}: thuTuDoi must be numeric`)
       members.push({
         id: row.id, name: row.name, gender: row.gender,
         nickname: row.nickname, bio: row.bio, address: row.address,
@@ -63,6 +66,8 @@ export function parseUnifiedCsv(csv: string): {
         isAlive: row.isAlive, notes: row.notes,
         fatherId: row.fatherId, motherId: row.motherId,
         childOrder: row.childOrder ?? '',
+        ngoaiToc: row.ngoaiToc ?? '',
+        thuTuDoi: row.thuTuDoi ?? '',
       })
       if (hasUserCols && row.username) {
         userLinks.push({ personId: row.id, username: row.username, userRole: row.userRole || 'viewer' })
@@ -129,6 +134,7 @@ const toBool = (v: string) => v === 'true'
 const toStr = (v: string) => v || null
 
 export function coerceMemberRow(r: CsvMemberRow) {
+  const ngoaiToc = r.ngoaiToc === 'true'
   return {
     id: r.id, name: r.name,
     gender: toStr(r.gender) as 'male' | 'female' | 'other' | null,
@@ -140,6 +146,8 @@ export function coerceMemberRow(r: CsvMemberRow) {
     deathIsLunar: toBool(r.deathIsLunar),
     isAlive: r.isAlive !== 'false',
     notes: toStr(r.notes),
+    ngoaiToc,
+    thuTuDoi: toInt(r.thuTuDoi),
   }
 }
 

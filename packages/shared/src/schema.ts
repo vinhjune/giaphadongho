@@ -37,6 +37,12 @@ export const persons = sqliteTable('persons', {
   deathIsLunar: integer('death_is_lunar', { mode: 'boolean' }).default(false),
   isAlive:      integer('is_alive', { mode: 'boolean' }).notNull().default(true),
   notes:        text('notes'),
+  // Lineage classification — ngoaiToc: married-in spouse or descendant through a
+  // married-in parent (con dâu/con rể/cháu ngoại). thuTuDoi: generation number
+  // counted from the branch's founding ancestor, resolved via parent OR spouse —
+  // set for ngoại tộc members too (their spouse's/parent's đời), not just blood members.
+  ngoaiToc:     integer('ngoai_toc', { mode: 'boolean' }).notNull().default(false),
+  thuTuDoi:     integer('thu_tu_doi'),
   createdAt:    text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt:    text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (t) => [

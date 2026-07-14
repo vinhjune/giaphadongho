@@ -68,6 +68,8 @@ export default function PersonDetailModal({ personId, onClose }: Props) {
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               {person.gender && <><dt className="text-stone-500">Giới tính</dt><dd className="text-stone-800">{GENDER_LABELS[person.gender] ?? person.gender}</dd></>}
+              {person.thuTuDoi != null && <><dt className="text-stone-500">Đời</dt><dd className="text-stone-800">{person.thuTuDoi}</dd></>}
+              {person.ngoaiToc && <><dt className="text-stone-500">Ngoại tộc</dt><dd className="text-stone-800">Có</dd></>}
               <dt className="text-stone-500">Ngày sinh</dt>
               <dd className="text-stone-800">{formatDate(person.birthYear, person.birthMonth, person.birthDay, person.birthIsLunar)}</dd>
               {!person.isAlive && (

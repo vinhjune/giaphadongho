@@ -13,6 +13,10 @@ export type PersonPublic = {
   birthIsLunar: boolean
   isAlive: boolean
   notes: string | null
+  /** true = married-in spouse or descendant through a married-in parent (con dâu/con rể/cháu ngoại) */
+  ngoaiToc: boolean
+  /** generation number from the branch's founding ancestor, resolved via parent or spouse; null only if neither resolves */
+  thuTuDoi: number | null
 }
 
 export type PersonFull = PersonPublic & {

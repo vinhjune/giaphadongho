@@ -16,6 +16,8 @@ const basePerson: PersonPublic = {
   birthIsLunar: false,
   isAlive: false,
   notes: null,
+  ngoaiToc: false,
+  thuTuDoi: null,
 }
 
 function wrap(data: PersonNodeData) {

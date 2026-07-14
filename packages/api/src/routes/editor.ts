@@ -106,6 +106,8 @@ editorRoutes.get('/persons/with-parents', async (c) => {
       deathIsLunar: persons.deathIsLunar,
       isAlive:      persons.isAlive,
       notes:        persons.notes,
+      ngoaiToc:     persons.ngoaiToc,
+      thuTuDoi:     persons.thuTuDoi,
       createdAt:    persons.createdAt,
       updatedAt:    persons.updatedAt,
       fatherId:     families.parent1Id,
@@ -159,6 +161,8 @@ editorRoutes.get('/persons/with-parents', async (c) => {
     deathIsLunar: r.deathIsLunar ?? false,
     isAlive:      r.isAlive,
     notes:        r.notes ?? null,
+    ngoaiToc:     r.ngoaiToc,
+    thuTuDoi:     r.thuTuDoi ?? null,
     fatherId:     r.fatherId ?? null,
     motherId:     r.motherId ?? null,
     childOrder:   r.childOrder ?? null,
@@ -187,6 +191,8 @@ const batchUpsertItemSchema = z.object({
   deathIsLunar: z.boolean().optional(),
   isAlive:      z.boolean().optional(),
   notes:        z.string().nullable().optional(),
+  ngoaiToc:     z.boolean().optional(),
+  thuTuDoi:     z.number().int().nullable().optional(),
   fatherId:     z.string().min(1).nullable().optional(),
   motherId:     z.string().min(1).nullable().optional(),
   childOrder:   z.number().int().min(1).nullable().optional(),
@@ -237,6 +243,8 @@ editorRoutes.post('/persons/batch', async (c) => {
           deathIsLunar: fields.deathIsLunar ?? false,
           isAlive:      fields.isAlive      ?? true,
           notes:        fields.notes        ?? null,
+          ngoaiToc:     fields.ngoaiToc     ?? false,
+          thuTuDoi:     fields.thuTuDoi     ?? null,
         })
       }
 
@@ -334,7 +342,8 @@ editorRoutes.post('/persons', async (c) => {
   if (!body.name?.trim()) return c.json({ error: 'name is required' }, 400)
   const id = crypto.randomUUID()
   const { name, gender, nickname, bio, address, email, phone, birthYear, birthMonth, birthDay,
-          birthIsLunar, deathYear, deathMonth, deathDay, deathIsLunar, isAlive, notes } = body
+          birthIsLunar, deathYear, deathMonth, deathDay, deathIsLunar, isAlive, notes,
+          ngoaiToc, thuTuDoi } = body
   await db.insert(persons).values({
     id, name: name.trim(), gender: gender ?? null, nickname: nickname ?? null, bio: bio ?? null,
     address: address ?? null, email: email ?? null, phone: phone ?? null,
@@ -343,6 +352,7 @@ editorRoutes.post('/persons', async (c) => {
     deathYear: deathYear ?? null, deathMonth: deathMonth ?? null, deathDay: deathDay ?? null,
     deathIsLunar: deathIsLunar ?? false,
     isAlive: isAlive ?? true, notes: notes ?? null,
+    ngoaiToc: ngoaiToc ?? false, thuTuDoi: thuTuDoi ?? null,
   })
   return c.json({ id }, 201)
 })

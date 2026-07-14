@@ -34,6 +34,8 @@ csvRoutes.get('/export/csv', async (c) => {
       deathIsLunar: persons.deathIsLunar,
       isAlive:      persons.isAlive,
       notes:        persons.notes,
+      ngoaiToc:     persons.ngoaiToc,
+      thuTuDoi:     persons.thuTuDoi,
       fatherId:     families.parent1Id,
       motherId:     families.parent2Id,
       childOrder:   familyMembers.childOrder,
